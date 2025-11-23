@@ -1,33 +1,31 @@
+<!-- src/main/resources/META-INF/plugin.xml -->
 <idea-plugin>
-    <id>com.antonio.perplexity.plugin</id>
+    <id>com.phosky.antoniojuan.plugin</id>
     <name>Perplexity Sonar Pro Assistant</name>
     <vendor email="you@example.com" url="https://example.com">Antonio Juan</vendor>
     <description>
         Plugin para enviar código y prompts a Perplexity (sonar-pro) y mostrar la respuesta en una tool window.
     </description>
-
     <depends>com.intellij.modules.platform</depends>
-
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Tool window -->
         <toolWindow id="Perplexity"
                     anchor="right"
-                    factoryClass="com.antonio.perplexity.ui.PerplexityToolWindowFactory"
-                    icon="/icons/perplexity.svg"/>
+                    factoryClass="com.phosky.antoniojuan.ui.PerplexityToolWindowFactory"
+                    icon="AllIcons.Actions.Lightning"/>
+        <applicationConfigurable
+                displayName="Perplexity Sonar Pro"
+                id="PerplexitySonarProSettings"
+                instance="com.phosky.antoniojuan.settings.PerplexitySettingsConfigurable"/>
     </extensions>
-
     <actions>
-        <!-- Acción de menú / toolbar para enviar selección a Perplexity -->
         <action id="Perplexity.SendSelection"
-                class="com.antonio.perplexity.actions.SendSelectionAction"
+                class="com.phosky.antoniojuan.actions.SendSelectionAction"
                 text="Enviar selección a Perplexity"
                 description="Envía el texto seleccionado a Perplexity Sonar Pro">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
-
-        <!-- Abrir ajustes de Perplexity (API key, prompt, límite mensual) -->
         <action id="Perplexity.OpenSettings"
-                class="com.antonio.perplexity.actions.OpenSettingsAction"
+                class="com.phosky.antoniojuan.actions.OpenSettingsAction"
                 text="Perplexity Settings"
                 description="Configurar Perplexity">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
