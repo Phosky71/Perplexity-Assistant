@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.phosky.antoniojuan"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -15,13 +15,11 @@ repositories {
 }
 
 dependencies {
+    implementation("org.json:json:20231013")
     intellijPlatform {
         create("IC", "2025.1.4.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
-        // Algunos plugins como ejemplo (añade los que necesites):
         bundledPlugin("com.intellij.java")
-        // Puedes añadir otros si usas APIs específicas, como:
-        // bundledPlugin("com.jetbrains.python")
     }
 }
 
@@ -39,10 +37,10 @@ intellijPlatform {
 tasks {
     patchPluginXml {
         sinceBuild.set("251")
-        untilBuild.set("*")
+        untilBuild.set("262.*")
     }
     compileKotlin {
-        kotlinOptions.jvmTarget = "17" // ¡Usa solo 17 aquí!
+        compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
     compileJava {
         targetCompatibility = "17"
@@ -53,7 +51,5 @@ tasks {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        // Si compilas para JVM 21 asegúrate que todo tu código y dependencias lo permiten,
-        // pero para plugins de JetBrains el target garantizado es 17.
     }
 }

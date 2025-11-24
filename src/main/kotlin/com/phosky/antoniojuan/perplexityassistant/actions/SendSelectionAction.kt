@@ -25,16 +25,23 @@ class SendSelectionAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        val selection = editor.selectionModel.selectedText
-        if (selection.isNullOrBlank()) {
-            Messages.showInfoMessage(project, "No hay texto seleccionado.", "Perplexity")
+
+        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Perplexity")
+        toolWindow?.show()
+        val panel = PerplexityToolWindowFactory.instance ?: return
+
+        val prompt = panel.getPromptText()
+        if (prompt.isBlank()) {
+            Messages.showInfoMessage(project, "Introduce un prompt o selecciona texto en el editor.", "Perplexity")
             return
         }
+
         val apiKey = PerplexityCredentials.getApiKey()
-        if (apiKey.isNullOrBlank()) {
-            Messages.showErrorDialog(project, "Configura primero la API key de Perplexity en Settings.", "Perplexity")
+        if (apiKey.isNullOrBlank() || apiKey == "***************") {
+            Messages.showErrorDialog(project, "Configura primero la API key de Perplexity.", "Perplexity")
             return
         }
+
         val settings = PerplexitySettingsState.getInstance()
         if (!settings.canMakeRequest()) {
             Messages.showWarningDialog(
@@ -44,24 +51,12 @@ class SendSelectionAction : AnAction() {
             )
             return
         }
-        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Perplexity")
-        toolWindow?.show()
-        val panel = PerplexityToolWindowFactory.instance
 
-        val extraPrompt = panel?.getExtraPrompt().orEmpty()
-        val finalPrompt = buildString {
-            append(settings.basePrompt)
-            if (extraPrompt.isNotBlank()) {
-                append("\n\nInstrucciones adicionales: ")
-                append(extraPrompt)
-            }
-        }
         ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val responseText = callPerplexity(apiKey, finalPrompt, selection)
-                settings.registerRequest()
+                val responseText = callPerplexity(apiKey, prompt)
                 ApplicationManager.getApplication().invokeLater {
-                    panel?.setResponseText(responseText)
+                    panel.showResponse(prompt, responseText)
                 }
             },
             "Enviando a Perplexity...",
@@ -70,7 +65,7 @@ class SendSelectionAction : AnAction() {
         )
     }
 
-    private fun callPerplexity(apiKey: String, prompt: String, selection: String): String {
+    private fun callPerplexity(apiKey: String, prompt: String): String {
         return try {
             val url = "https://api.perplexity.ai/chat/completions"
             val mediaType = "application/json".toMediaType()
@@ -78,8 +73,7 @@ class SendSelectionAction : AnAction() {
             json.put("model", "sonar-pro")
             json.put(
                 "messages", listOf(
-                    JSONObject().put("role", "system").put("content", prompt),
-                    JSONObject().put("role", "user").put("content", selection)
+                    JSONObject().put("role", "user").put("content", prompt)
                 )
             )
             val body = json.toString().toRequestBody(mediaType)

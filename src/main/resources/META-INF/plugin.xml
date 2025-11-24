@@ -1,21 +1,20 @@
-<!--TODO Implement i18n-->
 <idea-plugin>
-    <id>com.phosky.antoniojuan.perplexityassistant.plugin</id>
+    <id>com.phosky.antoniojuan.perplexityassistant</id>
     <name>Perplexity Sonar Pro Assistant</name>
-    <vendor email="you@example.com" url="https://example.com">Antonio Juan</vendor>
+    <version>1.0.1</version>
     <description>
-        Plugin para enviar código y prompts a Perplexity (sonar-pro) y mostrar la respuesta en una tool window.
+        Plugin para enviar código y prompts a Perplexity (sonar-pro) y mostrar la respuesta en una tool window tipo
+        chat.
     </description>
+    <vendor url="https://github.com/Phosky71/Perplexity-Assistant">Antonio Juan</vendor>
+    <idea-version since-build="251" until-build="262.*"/>
     <depends>com.intellij.modules.platform</depends>
+
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Perplexity"
                     anchor="right"
                     factoryClass="com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory"
                     icon="AllIcons.Actions.Lightning"/>
-        <applicationConfigurable
-                displayName="Perplexity Sonar Pro"
-                id="PerplexitySonarProSettings"
-                instance="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"/>
     </extensions>
     <actions>
         <action id="Perplexity.SendSelection"
@@ -23,12 +22,6 @@
                 text="Enviar Selección a Perplexity"
                 description="Envía el texto seleccionado a Perplexity Sonar Pro">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-        </action>
-        <action id="Perplexity.OpenSettings"
-                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"
-                text="Perplexity Settings"
-                description="Configurar perplexity">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>
