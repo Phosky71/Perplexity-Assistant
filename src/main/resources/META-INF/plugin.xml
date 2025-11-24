@@ -1,6 +1,6 @@
-<!-- src/main/resources/META-INF/plugin.xml -->
+<!--TODO Implement i18n-->
 <idea-plugin>
-    <id>com.phosky.antoniojuan.plugin</id>
+    <id>com.phosky.antoniojuan.perplexityassistant.plugin</id>
     <name>Perplexity Sonar Pro Assistant</name>
     <vendor email="you@example.com" url="https://example.com">Antonio Juan</vendor>
     <description>
@@ -10,24 +10,24 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Perplexity"
                     anchor="right"
-                    factoryClass="com.phosky.antoniojuan.ui.PerplexityToolWindowFactory"
+                    factoryClass="com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory"
                     icon="AllIcons.Actions.Lightning"/>
         <applicationConfigurable
                 displayName="Perplexity Sonar Pro"
                 id="PerplexitySonarProSettings"
-                instance="com.phosky.antoniojuan.settings.PerplexitySettingsConfigurable"/>
+                instance="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"/>
     </extensions>
     <actions>
         <action id="Perplexity.SendSelection"
-                class="com.phosky.antoniojuan.actions.SendSelectionAction"
-                text="Enviar selección a Perplexity"
+                class="com.phosky.antoniojuan.perplexityassistant.actions.SendSelectionAction"
+                text="Enviar Selección a Perplexity"
                 description="Envía el texto seleccionado a Perplexity Sonar Pro">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
         <action id="Perplexity.OpenSettings"
-                class="com.phosky.antoniojuan.actions.OpenSettingsAction"
+                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"
                 text="Perplexity Settings"
-                description="Configurar Perplexity">
+                description="Configurar perplexity">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>
