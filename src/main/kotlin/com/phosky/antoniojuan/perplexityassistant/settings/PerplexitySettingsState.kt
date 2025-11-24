@@ -1,4 +1,3 @@
-
 package com.phosky.antoniojuan.perplexityassistant.settings
 
 import com.intellij.openapi.components.PersistentStateComponent
@@ -44,10 +43,7 @@ Cumple esto en cada respuesta.
 ""${'"'}.trimIndent()"""
 
 
-
-
     override fun getState(): PerplexitySettingsState = this
-
     override fun loadState(state: PerplexitySettingsState) {
         XmlSerializerUtil.copyBean(state, this)
     }
@@ -57,14 +53,18 @@ Cumple esto en cada respuesta.
         if (nowMonth != currentMonth) {
             currentMonth = nowMonth
             usedUsdThisMonth = 0.0
-            isMonthStarted = false
+            isMonthStarted = true
         }
         if (!isMonthStarted) return false
         return usedUsdThisMonth + estimatedCostPerRequestUsd <= monthlyLimitUsd
     }
 
-    fun registerRequest() {
-        usedUsdThisMonth += estimatedCostPerRequestUsd
+    fun registerRequest(cost: Double) {
+        usedUsdThisMonth += cost
+    }
+
+    fun resetUsage() {
+        usedUsdThisMonth = 0.0
     }
 
     companion object {
