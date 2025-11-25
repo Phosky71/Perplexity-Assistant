@@ -16,6 +16,8 @@ repositories {
 
 dependencies {
     implementation("org.json:json:20231013")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    
     intellijPlatform {
         create("IC", "2023.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
@@ -37,7 +39,7 @@ intellijPlatform {
 tasks {
     patchPluginXml {
         sinceBuild.set("231")
-        untilBuild.set("262.*")
+        untilBuild.set("243.*")
     }
     compileKotlin {
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
