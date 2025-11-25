@@ -15,12 +15,18 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class SendSelectionAction : AnAction() {
 
     private val logger = Logger.getInstance(SendSelectionAction::class.java)
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
@@ -28,6 +34,7 @@ class SendSelectionAction : AnAction() {
 
         val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Perplexity")
         toolWindow?.show()
+
         val panel = PerplexityToolWindowFactory.instance ?: return
 
         val prompt = panel.getPromptText()
@@ -69,13 +76,15 @@ class SendSelectionAction : AnAction() {
         return try {
             val url = "https://api.perplexity.ai/chat/completions"
             val mediaType = "application/json".toMediaType()
+
+            // Build messages array properly using JSONArray
+            val messagesArray = JSONArray()
+            messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
+
             val json = JSONObject()
             json.put("model", "sonar-pro")
-            json.put(
-                "messages", listOf(
-                    JSONObject().put("role", "user").put("content", prompt)
-                )
-            )
+            json.put("messages", messagesArray)
+
             val body = json.toString().toRequestBody(mediaType)
             val request = Request.Builder()
                 .url(url)
@@ -88,12 +97,15 @@ class SendSelectionAction : AnAction() {
                 if (!resp.isSuccessful) {
                     return "Perplexity error: HTTP ${resp.code} - ${resp.message}"
                 }
+
                 val respBody = resp.body?.string().orEmpty()
                 val obj = JSONObject(respBody)
+
                 val choices = obj.optJSONArray("choices")
                 if (choices == null || choices.length() == 0) {
                     return "Empty response from Perplexity."
                 }
+
                 val message = choices.getJSONObject(0).getJSONObject("message")
                 message.getString("content")
             }
