@@ -38,11 +38,11 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
 
-        <action id="Perplexity.OpenSettings"
-                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"
-                text="Perplexity Settings"
-                description="Open Perplexity Assistant settings">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
+<!--        <action id="Perplexity.OpenSettings"-->
+<!--                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"-->
+<!--                text="Perplexity Settings"-->
+<!--                description="Open Perplexity Assistant settings">-->
+<!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
+<!--        </action>-->
     </actions>
 </idea-plugin>

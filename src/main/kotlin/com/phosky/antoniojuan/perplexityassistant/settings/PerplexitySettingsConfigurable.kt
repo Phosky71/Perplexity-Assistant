@@ -47,7 +47,7 @@ class PerplexitySettingsConfigurable : Configurable {
 
             startMonthButton.addActionListener {
                 val s = PerplexitySettingsState.getInstance()
-                s.isMonthStarted = true
+//                s.isMonthStarted = true
                 s.currentMonth = YearMonth.now().toString()
                 updateStatus()
             }
@@ -62,8 +62,8 @@ class PerplexitySettingsConfigurable : Configurable {
         val month = s.currentMonth
         val used = s.usedUsdThisMonth
         val limit = s.monthlyLimitUsd
-        val started = if (s.isMonthStarted) "Active" else "Inactive (click 'Start month')"
-        statusLabel.text = "Month: $month | Used: $used USD / $limit USD | Status: $started"
+//        val started = if (s.isMonthStarted) "Active" else "Inactive (click 'Start month')"
+        statusLabel.text = "Month: $month | Used: $used USD / $limit USD "
     }
 
     override fun isModified(): Boolean {
