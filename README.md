@@ -14,12 +14,6 @@ An IntelliJ IDEA plugin that integrates Perplexity AI directly into your IDE, pr
 
 ## Installation
 
-### From JetBrains Marketplace
-1. Open your JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.)
-2. Go to `Settings/Preferences` > `Plugins` > `Marketplace`
-3. Search for "Perplexity Assistant"
-4. Click `Install`
-
 ### Manual Installation
 1. Download the latest release from [Releases](https://github.com/Phosky71/Perplexity-Assistant/releases)
 2. Go to `Settings/Preferences` > `Plugins` > `⚙️` > `Install Plugin from Disk...`
