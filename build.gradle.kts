@@ -17,7 +17,7 @@ repositories {
 dependencies {
     implementation("org.json:json:20231013")
     intellijPlatform {
-        create("IC", "2025.1.4.1")
+        create("IC", "2023.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         bundledPlugin("com.intellij.java")
     }
@@ -26,7 +26,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "251"
+            sinceBuild = "231"
         }
         changeNotes = """
             Initial version
@@ -36,7 +36,7 @@ intellijPlatform {
 
 tasks {
     patchPluginXml {
-        sinceBuild.set("251")
+        sinceBuild.set("231")
         untilBuild.set("262.*")
     }
     compileKotlin {
