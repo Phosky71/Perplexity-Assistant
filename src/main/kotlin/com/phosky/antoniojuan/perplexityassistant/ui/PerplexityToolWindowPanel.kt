@@ -10,9 +10,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.awt.*
 import java.awt.datatransfer.StringSelection
+import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.border.LineBorder
 
@@ -27,7 +29,11 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     private val chatScrollPane = JScrollPane(chatPanel)
     private val promptField = JTextField()
     private val sendButton = JButton("Send")
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     init {
         val topPanel = JPanel(BorderLayout())
@@ -39,6 +45,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         statusPanel.add(limitStatus)
         statusPanel.add(monthlyUsageStatus)
         topPanel.add(statusPanel, BorderLayout.CENTER)
+
         updateStatus()
 
         // Settings action with option to reset spending
@@ -49,11 +56,13 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 Dialog.ModalityType.APPLICATION_MODAL
             )
             dialog.layout = BorderLayout()
+
             val panel = JPanel()
             panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
             val apiKeyField = JPasswordField(30)
             apiKeyField.text = PerplexityCredentials.getApiKey() ?: ""
+
             val apiKeySave = JButton("Save API Key")
             apiKeySave.addActionListener {
                 val key = String(apiKeyField.password)
@@ -99,6 +108,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
 
         chatScrollPane.preferredSize = Dimension(500, 350)
+
         val promptPanel = JPanel(BorderLayout())
         promptPanel.add(promptField, BorderLayout.CENTER)
         promptPanel.add(sendButton, BorderLayout.EAST)
@@ -132,7 +142,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
             "API Key: Not configured" else "API Key: OK"
         apiKeyStatus.text = keyStatus
         limitStatus.text = "Monthly limit: ${settings.monthlyLimitUsd} USD"
-        monthlyUsageStatus.text = "Spent this month: ${settings.usedUsdThisMonth} USD"
+        monthlyUsageStatus.text = "Spent this month: ${String.format("%.4f", settings.usedUsdThisMonth)} USD"
     }
 
     fun getPromptText(): String = promptField.text.orEmpty()
@@ -162,6 +172,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(response), null)
         }
+
         buttonPanel.add(insertButton)
         buttonPanel.add(copyButton)
 
@@ -172,7 +183,6 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         chatPanel.add(messagePanel)
         chatPanel.revalidate()
         chatPanel.repaint()
-
         SwingUtilities.invokeLater { chatScrollPane.verticalScrollBar.value = chatScrollPane.verticalScrollBar.maximum }
     }
 
@@ -206,14 +216,16 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         return try {
             val url = "https://api.perplexity.ai/chat/completions"
             val mediaType = "application/json".toMediaType()
+
+            // Build messages array properly using JSONArray
+            val messagesArray = JSONArray()
+            messagesArray.put(JSONObject().put("role", "system").put("content", settings.basePrompt))
+            messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
+
             val json = JSONObject()
             json.put("model", "sonar-pro")
-            json.put(
-                "messages", listOf(
-                    JSONObject().put("role", "system").put("content", settings.basePrompt),
-                    JSONObject().put("role", "user").put("content", prompt)
-                )
-            )
+            json.put("messages", messagesArray)
+
             val body = json.toString().toRequestBody(mediaType)
             val request = Request.Builder()
                 .url(url)
@@ -226,8 +238,10 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 if (!resp.isSuccessful) {
                     return Pair("Perplexity error: HTTP ${resp.code} - ${resp.message}", 0.0)
                 }
+
                 val respBody = resp.body?.string().orEmpty()
                 val obj = JSONObject(respBody)
+
                 val choices = obj.optJSONArray("choices")
                 val answer = if (choices != null && choices.length() > 0) {
                     choices.getJSONObject(0).getJSONObject("message").optString("content", "No response.")
@@ -235,13 +249,16 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                     "Empty response from Perplexity."
                 }
 
+                // Parse usage information from response
                 val usage = obj.optJSONObject("usage")
-                val costObj = usage?.optJSONObject("cost")
-                val totalCost = costObj?.optDouble("total_cost", 0.0) ?: 0.0
                 val promptTokens = usage?.optInt("prompt_tokens", 0) ?: 0
                 val completionTokens = usage?.optInt("completion_tokens", 0) ?: 0
                 val tokens = promptTokens + completionTokens
 
+                // Estimate cost based on sonar-pro pricing ($3 per 1M input, $15 per 1M output)
+                val estimatedCost = (promptTokens * 0.000003) + (completionTokens * 0.000015)
+
+                // Parse citations if available
                 val citations = obj.optJSONArray("citations")
                 val citationsList = mutableListOf<String>()
                 if (citations != null) {
@@ -254,13 +271,14 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                     append(answer)
                     append("\n\n--- Request Info ---\n")
                     append("Total tokens: $tokens\n")
-                    append("Total cost: $totalCost USD\n")
+                    append("Estimated cost: ${String.format("%.6f", estimatedCost)} USD\n")
                     if (citationsList.isNotEmpty()) {
                         append("Citations:\n")
                         citationsList.forEach { cite -> append("- $cite\n") }
                     }
                 }
-                Pair(responseInfo, totalCost)
+
+                Pair(responseInfo, estimatedCost)
             }
         } catch (t: Throwable) {
             Pair("Error calling Perplexity: ${t.message}", 0.0)
