@@ -7,15 +7,28 @@
         chat.
     </description>
     <vendor url="https://github.com/Phosky71/Perplexity-Assistant">Antonio Juan</vendor>
-    <idea-version since-build="251" until-build="262.*"/>
+    <idea-version since-build="231" until-build="262.*"/>
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Application Service for Settings State -->
+        <applicationService
+                serviceImplementation="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState"/>
+
+        <!-- Settings Configurable -->
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"
+                id="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"
+                displayName="Perplexity Assistant"/>
+
+        <!-- Tool Window -->
         <toolWindow id="Perplexity"
                     anchor="right"
                     factoryClass="com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory"
                     icon="AllIcons.Actions.Lightning"/>
     </extensions>
+
     <actions>
         <action id="Perplexity.SendSelection"
                 class="com.phosky.antoniojuan.perplexityassistant.actions.SendSelectionAction"
