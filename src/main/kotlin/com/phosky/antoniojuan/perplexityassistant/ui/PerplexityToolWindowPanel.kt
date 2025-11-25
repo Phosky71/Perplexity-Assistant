@@ -19,32 +19,33 @@ import javax.swing.border.LineBorder
 class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     private val settings = PerplexitySettingsState.getInstance()
 
-    private val settingsButton = JButton("Ajustes")
+    private val settingsButton = JButton("Settings")
     private val apiKeyStatus = JLabel()
     private val limitStatus = JLabel()
     private val monthlyUsageStatus = JLabel()
     private val chatPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private val chatScrollPane = JScrollPane(chatPanel)
     private val promptField = JTextField()
-    private val sendButton = JButton("Enviar")
+    private val sendButton = JButton("Send")
     private val client = OkHttpClient()
 
     init {
         val topPanel = JPanel(BorderLayout())
         topPanel.add(settingsButton, BorderLayout.WEST)
+
         val statusPanel = JPanel()
         statusPanel.layout = BoxLayout(statusPanel, BoxLayout.Y_AXIS)
         statusPanel.add(apiKeyStatus)
         statusPanel.add(limitStatus)
         statusPanel.add(monthlyUsageStatus)
         topPanel.add(statusPanel, BorderLayout.CENTER)
-
         updateStatus()
-        // Acción "Ajustes" con opción para resetear el gasto
+
+        // Settings action with option to reset spending
         settingsButton.addActionListener {
             val dialog = JDialog(
                 SwingUtilities.getWindowAncestor(this),
-                "Ajustes Perplexity",
+                "Perplexity Settings",
                 Dialog.ModalityType.APPLICATION_MODAL
             )
             dialog.layout = BorderLayout()
@@ -53,40 +54,44 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
 
             val apiKeyField = JPasswordField(30)
             apiKeyField.text = PerplexityCredentials.getApiKey() ?: ""
-            val apiKeySave = JButton("Guardar API Key")
+            val apiKeySave = JButton("Save API Key")
             apiKeySave.addActionListener {
                 val key = String(apiKeyField.password)
                 if (key.isNotBlank()) {
                     PerplexityCredentials.saveApiKey(key)
-                    JOptionPane.showMessageDialog(dialog, "API Key guardada correctamente.")
+                    JOptionPane.showMessageDialog(dialog, "API Key saved successfully.")
                     updateStatus()
                 }
             }
+
             val limitField = JTextField(settings.monthlyLimitUsd.toString(), 8)
-            val limitSave = JButton("Guardar límite mensual")
+            val limitSave = JButton("Save monthly limit")
             limitSave.addActionListener {
                 val value = limitField.text.toDoubleOrNull()
                 if (value != null && value >= 0.01) {
                     settings.monthlyLimitUsd = value
-                    JOptionPane.showMessageDialog(dialog, "Límite guardado correctamente.")
+                    JOptionPane.showMessageDialog(dialog, "Limit saved successfully.")
                     updateStatus()
                 }
             }
-            val resetUsageBtn = JButton("Resetear gasto este mes")
+
+            val resetUsageBtn = JButton("Reset monthly spending")
             resetUsageBtn.addActionListener {
                 settings.resetUsage()
-                JOptionPane.showMessageDialog(dialog, "Contador de gasto mensual reseteado.")
+                JOptionPane.showMessageDialog(dialog, "Monthly spending counter reset.")
                 updateStatus()
             }
+
             panel.add(JLabel("API Key:"))
             panel.add(apiKeyField)
             panel.add(apiKeySave)
             panel.add(Box.createVerticalStrut(10))
-            panel.add(JLabel("Límite mensual (USD):"))
+            panel.add(JLabel("Monthly limit (USD):"))
             panel.add(limitField)
             panel.add(limitSave)
             panel.add(Box.createVerticalStrut(10))
             panel.add(resetUsageBtn)
+
             dialog.add(panel, BorderLayout.CENTER)
             dialog.pack()
             dialog.setLocationRelativeTo(this)
@@ -105,16 +110,17 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         sendButton.addActionListener {
             val prompt = getPromptText()
             val apiKey = PerplexityCredentials.getApiKey()
+
             if (prompt.isBlank()) {
-                JOptionPane.showMessageDialog(this, "Introduce un prompt antes de enviar.")
+                JOptionPane.showMessageDialog(this, "Enter a prompt before sending.")
                 return@addActionListener
             }
             if (apiKey.isNullOrBlank()) {
-                JOptionPane.showMessageDialog(this, "Configura la API Key primero en Ajustes.")
+                JOptionPane.showMessageDialog(this, "Configure the API Key first in Settings.")
                 return@addActionListener
             }
             if (!settings.canMakeRequest()) {
-                JOptionPane.showMessageDialog(this, "Límite mensual alcanzado (${settings.monthlyLimitUsd} USD).")
+                JOptionPane.showMessageDialog(this, "Monthly limit reached (${settings.monthlyLimitUsd} USD).")
                 return@addActionListener
             }
             sendPromptToPerplexity(prompt, apiKey)
@@ -123,13 +129,14 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
 
     private fun updateStatus() {
         val keyStatus = if (PerplexityCredentials.getApiKey().isNullOrBlank())
-            "API Key: NO configurada" else "API Key: OK"
+            "API Key: Not configured" else "API Key: OK"
         apiKeyStatus.text = keyStatus
-        limitStatus.text = "Límite mensual: ${settings.monthlyLimitUsd} USD"
-        monthlyUsageStatus.text = "Gastado este mes: ${settings.usedUsdThisMonth} USD"
+        limitStatus.text = "Monthly limit: ${settings.monthlyLimitUsd} USD"
+        monthlyUsageStatus.text = "Spent this month: ${settings.usedUsdThisMonth} USD"
     }
 
     fun getPromptText(): String = promptField.text.orEmpty()
+
     fun showResponse(prompt: String, response: String) {
         addChatMessage(prompt, response)
         promptField.text = ""
@@ -140,27 +147,32 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
         messagePanel.border = LineBorder(Color.GRAY, 1)
         messagePanel.add(JLabel("<html><b>Prompt:</b> $prompt</html>"))
+
         val responseArea = JTextArea(response).apply {
             isEditable = false
             lineWrap = true
             wrapStyleWord = true
         }
+
         val buttonPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-        val insertButton = JButton("Insertar en editor")
+        val insertButton = JButton("Insert in editor")
         insertButton.addActionListener { insertTextInEditor(response) }
-        val copyButton = JButton("Copiar respuesta")
+        val copyButton = JButton("Copy response")
         copyButton.addActionListener {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(response), null)
         }
         buttonPanel.add(insertButton)
         buttonPanel.add(copyButton)
+
         messagePanel.add(responseArea)
         messagePanel.add(buttonPanel)
+
         chatPanel.add(Box.createVerticalStrut(8))
         chatPanel.add(messagePanel)
         chatPanel.revalidate()
         chatPanel.repaint()
+
         SwingUtilities.invokeLater { chatScrollPane.verticalScrollBar.value = chatScrollPane.verticalScrollBar.maximum }
     }
 
@@ -183,13 +195,13 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                     showResponse(prompt, response)
                 }
             },
-            "Enviando a Perplexity...",
+            "Sending to Perplexity...",
             true,
             project
         )
     }
 
-    // Devuelve respuesta y coste real (double)
+    // Returns response and actual cost (double)
     private fun callPerplexityApiWithCost(prompt: String, apiKey: String): Pair<String, Double> {
         return try {
             val url = "https://api.perplexity.ai/chat/completions"
@@ -209,17 +221,18 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 .addHeader("Content-Type", "application/json")
                 .post(body)
                 .build()
+
             client.newCall(request).execute().use { resp ->
                 if (!resp.isSuccessful) {
-                    return Pair("Error de Perplexity: HTTP ${resp.code} - ${resp.message}", 0.0)
+                    return Pair("Perplexity error: HTTP ${resp.code} - ${resp.message}", 0.0)
                 }
                 val respBody = resp.body?.string().orEmpty()
                 val obj = JSONObject(respBody)
                 val choices = obj.optJSONArray("choices")
                 val answer = if (choices != null && choices.length() > 0) {
-                    choices.getJSONObject(0).getJSONObject("message").optString("content", "Sin respuesta.")
+                    choices.getJSONObject(0).getJSONObject("message").optString("content", "No response.")
                 } else {
-                    "Respuesta vacía de Perplexity."
+                    "Empty response from Perplexity."
                 }
 
                 val usage = obj.optJSONObject("usage")
@@ -239,18 +252,18 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
 
                 val responseInfo = buildString {
                     append(answer)
-                    append("\n\n─── Info petición ───\n")
+                    append("\n\n--- Request Info ---\n")
                     append("Total tokens: $tokens\n")
-                    append("Coste total: $totalCost USD\n")
+                    append("Total cost: $totalCost USD\n")
                     if (citationsList.isNotEmpty()) {
-                        append("Citas:\n")
+                        append("Citations:\n")
                         citationsList.forEach { cite -> append("- $cite\n") }
                     }
                 }
                 Pair(responseInfo, totalCost)
             }
         } catch (t: Throwable) {
-            Pair("Error llamando a Perplexity: ${t.message}", 0.0)
+            Pair("Error calling Perplexity: ${t.message}", 0.0)
         }
     }
 }
