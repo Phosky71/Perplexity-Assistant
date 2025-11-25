@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.phosky.antoniojuan"
-version = "1.0.1"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -39,7 +39,7 @@ intellijPlatform {
 tasks {
     patchPluginXml {
         sinceBuild.set("231")
-        untilBuild.set("243.*")
+        untilBuild.set("262.*")
     }
     compileKotlin {
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
