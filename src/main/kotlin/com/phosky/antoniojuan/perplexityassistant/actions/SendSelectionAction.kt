@@ -32,13 +32,13 @@ class SendSelectionAction : AnAction() {
 
         val prompt = panel.getPromptText()
         if (prompt.isBlank()) {
-            Messages.showInfoMessage(project, "Introduce un prompt o selecciona texto en el editor.", "Perplexity")
+            Messages.showInfoMessage(project, "Enter a prompt or select text in the editor.", "Perplexity")
             return
         }
 
         val apiKey = PerplexityCredentials.getApiKey()
         if (apiKey.isNullOrBlank() || apiKey == "***************") {
-            Messages.showErrorDialog(project, "Configura primero la API key de Perplexity.", "Perplexity")
+            Messages.showErrorDialog(project, "Configure the Perplexity API key first.", "Perplexity")
             return
         }
 
@@ -46,7 +46,7 @@ class SendSelectionAction : AnAction() {
         if (!settings.canMakeRequest()) {
             Messages.showWarningDialog(
                 project,
-                "Has alcanzado el límite mensual configurado (${settings.monthlyLimitUsd} USD).",
+                "You have reached the configured monthly limit (${settings.monthlyLimitUsd} USD).",
                 "Perplexity"
             )
             return
@@ -59,7 +59,7 @@ class SendSelectionAction : AnAction() {
                     panel.showResponse(prompt, responseText)
                 }
             },
-            "Enviando a Perplexity...",
+            "Sending to Perplexity...",
             true,
             project
         )
@@ -83,22 +83,23 @@ class SendSelectionAction : AnAction() {
                 .addHeader("Content-Type", "application/json")
                 .post(body)
                 .build()
+
             client.newCall(request).execute().use { resp ->
                 if (!resp.isSuccessful) {
-                    return "Error de Perplexity: HTTP ${resp.code} - ${resp.message}"
+                    return "Perplexity error: HTTP ${resp.code} - ${resp.message}"
                 }
                 val respBody = resp.body?.string().orEmpty()
                 val obj = JSONObject(respBody)
                 val choices = obj.optJSONArray("choices")
                 if (choices == null || choices.length() == 0) {
-                    return "Respuesta vacía de Perplexity."
+                    return "Empty response from Perplexity."
                 }
                 val message = choices.getJSONObject(0).getJSONObject("message")
                 message.getString("content")
             }
         } catch (t: Throwable) {
-            logger.warn("Error llamando a Perplexity", t)
-            "Error llamando a Perplexity: ${t.message}"
+            logger.warn("Error calling Perplexity", t)
+            "Error calling Perplexity: ${t.message}"
         }
     }
 }
