@@ -19,13 +19,12 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
     var monthlyLimitUsd: Double = 5.0
     var usedUsdThisMonth: Double = 0.0
     var currentMonth: String = YearMonth.now().toString()
-    var isMonthStarted: Boolean = false
 
     var basePrompt: String = """
         You are an expert programming assistant specialized in code refactoring, technical explanation, and best practices.
         You must analyze the content sent to you and respond clearly, organized, and professionally.
         Your main job is to help understand code, suggest improvements, find bugs, and optimize both logic and style according to the detected language.
-        
+
         - Always briefly explain the problem, the solution, and the recommended steps.
         - If the user requests a rewrite, refactor the code with clear comments and improve readability.
         - If you detect bugs or insecure practices, point them out and fix them.
@@ -42,12 +41,14 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
 
     fun canMakeRequest(): Boolean {
         val nowMonth = YearMonth.now().toString()
+        
+        // If it's a new month, reset the usage counter
         if (nowMonth != currentMonth) {
             currentMonth = nowMonth
             usedUsdThisMonth = 0.0
-            isMonthStarted = true
         }
-        if (!isMonthStarted) return false
+        
+        // Check if adding another request would exceed the monthly limit
         return usedUsdThisMonth + estimatedCostPerRequestUsd <= monthlyLimitUsd
     }
 
