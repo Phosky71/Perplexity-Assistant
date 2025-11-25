@@ -1,27 +1,48 @@
 <idea-plugin>
     <id>com.phosky.antoniojuan.perplexityassistant</id>
     <name>Perplexity Sonar Pro Assistant</name>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <description>
-        Plugin para enviar código y prompts a Perplexity (sonar-pro) y mostrar la respuesta en una tool window tipo
-        chat.
+        Plugin to send code and prompts to Perplexity (sonar-pro) and display the response in a chat-style
+        tool window.
     </description>
     <vendor url="https://github.com/Phosky71/Perplexity-Assistant">Antonio Juan</vendor>
-    <idea-version since-build="251" until-build="262.*"/>
+    <idea-version since-build="231" until-build="262.*"/>
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Application Service for Settings State -->
+        <applicationService
+                serviceImplementation="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState"/>
+
+        <!-- Settings Configurable -->
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"
+                id="com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsConfigurable"
+                displayName="Perplexity Assistant"/>
+
+        <!-- Tool Window -->
         <toolWindow id="Perplexity"
                     anchor="right"
                     factoryClass="com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory"
                     icon="AllIcons.Actions.Lightning"/>
     </extensions>
+
     <actions>
         <action id="Perplexity.SendSelection"
                 class="com.phosky.antoniojuan.perplexityassistant.actions.SendSelectionAction"
-                text="Enviar Selección a Perplexity"
-                description="Envía el texto seleccionado a Perplexity Sonar Pro">
+                text="Send Selection to Perplexity"
+                description="Send selected text to Perplexity Sonar Pro">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
+
+<!--        <action id="Perplexity.OpenSettings"-->
+<!--                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"-->
+<!--                text="Perplexity Settings"-->
+<!--                description="Open Perplexity Assistant settings">-->
+<!--            <add-to-group group-id="ToolsMenu" anchor="last"/>-->
+<!--        </action>-->
     </actions>
 </idea-plugin>

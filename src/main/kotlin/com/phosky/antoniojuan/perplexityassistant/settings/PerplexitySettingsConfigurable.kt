@@ -16,7 +16,7 @@ class PerplexitySettingsConfigurable : Configurable {
     private lateinit var statusLabel: JLabel
     private lateinit var startMonthButton: JButton
 
-    override fun getDisplayName(): String = "Perplexity Sonar Pro"
+    override fun getDisplayName(): String = "Perplexity Assistant"
 
     override fun createComponent(): JComponent {
         val settings = PerplexitySettingsState.getInstance()
@@ -30,15 +30,15 @@ class PerplexitySettingsConfigurable : Configurable {
             costField = JTextField()
             limitField = JTextField()
             statusLabel = JLabel()
-            startMonthButton = JButton("Empezar mes")
+            startMonthButton = JButton("Start month")
 
-            form.add(JLabel("API Key de Perplexity:"))
+            form.add(JLabel("Perplexity API Key:"))
             form.add(apiKeyField)
-            form.add(JLabel("Prompt base:"))
+            form.add(JLabel("Base prompt:"))
             form.add(JScrollPane(promptArea))
-            form.add(JLabel("Coste estimado por request (USD):"))
+            form.add(JLabel("Estimated cost per request (USD):"))
             form.add(costField)
-            form.add(JLabel("Límite mensual (USD):"))
+            form.add(JLabel("Monthly limit (USD):"))
             form.add(limitField)
             form.add(statusLabel)
             form.add(startMonthButton)
@@ -47,7 +47,7 @@ class PerplexitySettingsConfigurable : Configurable {
 
             startMonthButton.addActionListener {
                 val s = PerplexitySettingsState.getInstance()
-                s.isMonthStarted = true
+//                s.isMonthStarted = true
                 s.currentMonth = YearMonth.now().toString()
                 updateStatus()
             }
@@ -62,8 +62,8 @@ class PerplexitySettingsConfigurable : Configurable {
         val month = s.currentMonth
         val used = s.usedUsdThisMonth
         val limit = s.monthlyLimitUsd
-        val started = if (s.isMonthStarted) "Activo" else "Inactivo (pulsa 'Empezar mes')"
-        statusLabel.text = "Mes: $month | Usado: $used USD / $limit USD | Estado: $started"
+//        val started = if (s.isMonthStarted) "Active" else "Inactive (click 'Start month')"
+        statusLabel.text = "Month: $month | Used: $used USD / $limit USD "
     }
 
     override fun isModified(): Boolean {

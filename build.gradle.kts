@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.phosky.antoniojuan"
-version = "1.0.1"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -16,8 +16,10 @@ repositories {
 
 dependencies {
     implementation("org.json:json:20231013")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    
     intellijPlatform {
-        create("IC", "2025.1.4.1")
+        create("IC", "2023.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         bundledPlugin("com.intellij.java")
     }
@@ -26,7 +28,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "251"
+            sinceBuild = "231"
         }
         changeNotes = """
             Initial version
@@ -36,7 +38,7 @@ intellijPlatform {
 
 tasks {
     patchPluginXml {
-        sinceBuild.set("251")
+        sinceBuild.set("231")
         untilBuild.set("262.*")
     }
     compileKotlin {
