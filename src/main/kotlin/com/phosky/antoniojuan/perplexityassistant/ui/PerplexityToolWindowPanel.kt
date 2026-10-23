@@ -4,6 +4,8 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.ui.JBColor
+import com.intellij.util.ui.JBUI
 import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
@@ -23,6 +25,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     companion object {
         private const val MAX_CHAT_MESSAGES = 50
     }
+    private var emptyStateLabel: JLabel? = null
     private val settings = PerplexitySettingsState.getInstance()
 
     private val settingsButton = JButton("Settings")
@@ -53,7 +56,11 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 .showSettingsDialog(project, "Perplexity Assistant")
         }
 
-        chatScrollPane.preferredSize = Dimension(500, 350)
+        chatScrollPane.preferredSize = JBUI.size(400, 300)
+
+        emptyStateLabel = JLabel("Send a prompt to start", SwingConstants.CENTER)
+        emptyStateLabel?.foreground = JBColor.gray
+        chatPanel.add(emptyStateLabel)
 
         val promptPanel = JPanel(BorderLayout())
         promptPanel.add(promptField, BorderLayout.CENTER)
@@ -100,11 +107,12 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     }
 
     fun addChatMessage(prompt: String, response: String) {
+        emptyStateLabel?.let { chatPanel.remove(it); emptyStateLabel = null }
         while (chatPanel.componentCount >= MAX_CHAT_MESSAGES * 2) {
             chatPanel.remove(0)
         }
         val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
-        messagePanel.border = LineBorder(Color.GRAY, 1)
+        messagePanel.border = JBUI.Borders.customLine(JBColor.border(), 1)
         messagePanel.add(JLabel("<html><b>Prompt:</b> $prompt</html>"))
 
         val responseArea = JTextArea(response).apply {
