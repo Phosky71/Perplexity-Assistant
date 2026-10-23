@@ -169,7 +169,7 @@ El plugin cubre el caso de uso básico (chat + envío de prompt + inserción). L
 - **Esfuerzo:** M · **Riesgo:** Medio.
 - **Dependencias:** UI-001.
 - **Criterios de aceptación:** Paridad funcional; tests pasan.
-- **Decisión:** Siguiente versión (1.3.0).
+- **Decisión:** Aplazado a 1.4.0 (riesgo de estabilidad).
 
 ### UI-003 — Renderizado rico con JCEF
 - **Frente:** 3
@@ -189,7 +189,7 @@ El plugin cubre el caso de uso básico (chat + envío de prompt + inserción). L
 - FEAT-001, FEAT-002, FEAT-003, FEAT-005, FEAT-009, TECH-003, UI-001.
 
 ### 1.3.0
-- FEAT-004, FEAT-006, FEAT-007, TECH-001, TECH-002, UI-002.
+- FEAT-004, FEAT-006, FEAT-007, TECH-001, TECH-002. UI-002 aplazado a 1.4.0.
 
 ### 2.0.0
 - FEAT-008 (si la API lo soporta). UI-003 descartado.
