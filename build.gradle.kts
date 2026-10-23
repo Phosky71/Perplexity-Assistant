@@ -23,6 +23,9 @@ dependencies {
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         bundledPlugin("com.intellij.java")
     }
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.0")
 }
 
 intellijPlatform {
@@ -33,6 +36,12 @@ intellijPlatform {
         changeNotes = """
             Initial version
         """.trimIndent()
+    }
+    pluginVerification {
+        ides {
+            ide("IC", "2023.1.7")
+            ide("IC", "2024.1.7")
+        }
     }
 }
 
