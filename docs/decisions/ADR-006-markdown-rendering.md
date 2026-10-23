@@ -1,6 +1,6 @@
 # ADR-006 — Renderizado de Markdown en respuestas
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto

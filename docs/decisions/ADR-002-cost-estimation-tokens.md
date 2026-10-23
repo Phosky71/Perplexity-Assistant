@@ -25,7 +25,6 @@ Estimar el coste como `(prompt_tokens * 0.000003) + (completion_tokens * 0.00001
 - Refleja mejor el consumo real que un coste fijo.
 - Permite bloquear requests cuando se supera el límite mensual configurado.
 
-## Consecuencias
+## Nota (1.3.0)
 
-- La estimación puede desviarse de la factura real si cambian los precios.
-- Requiere que la respuesta incluya `usage`; si no, el coste se registra como 0.0.
+Los precios por modelo difieren (ver ADR-008). La tabla de coste debe ser por modelo; la fórmula base se mantiene. Los cargos de búsqueda no se modelan.

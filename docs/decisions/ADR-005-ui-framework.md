@@ -1,6 +1,6 @@
 # ADR-005 — Framework de UI para el plugin
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto

@@ -67,7 +67,7 @@ El plugin cubre el caso de uso básico (chat + envío de prompt + inserción). L
 - **Propuesta:** ComboBox en el panel y en settings para elegir modelo.
 - **Beneficio:** Flexibilidad (reasoning, modelos más baratos).
 - **Esfuerzo:** S · **Riesgo:** Bajo
-- **Dependencias:** No verificado — confirmar modelos disponibles en la API actual de Perplexity.
+- **Dependencias:** No verificado — confirmar modelos disponibles en la API actual de Perplexity. (Verificado en ADR-008: sonar, sonar-pro, sonar-reasoning-pro; sonar-deep-research queda para más adelante.)
 - **Criterios de aceptación:** Cambio de modelo persiste; coste se recalcula.
 - **Decisión:** Siguiente versión (1.3.0).
 
