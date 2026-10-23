@@ -7,25 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-23
+
 ### Added
-- Estudio de producto y rediseño de UI en `docs/product/` (propuestas y alternativas A/B/C).
-- ADR-005..008 propuestos.
+- Pulido de UI Swing con `JBUI`/`JBColor` y estado vacío (UI-001).
+- Onboarding de API key con aviso de privacidad (FEAT-009).
+- Aviso de uso al 80% del límite mensual y tooltip de última request (FEAT-005).
+- Acción "Send File Context to Perplexity" con vista previa (FEAT-001).
+- Acciones rápidas Explain/Review/Refactor/Tests/Docs (FEAT-002).
+- Renderizado ligero de Markdown con bloques de código y acciones (FEAT-003).
+- Configuración de firma/publicación en Marketplace (TECH-003).
 
 ### Changed
-- Núcleo HTTP compartido (`PerplexityClient`), consolidación de settings y pulido de UI en curso para 1.2.0.
-- Documentación: auditoría de código y seguridad registrada en `docs/audit/AUDIT-2026-10-23.md`.
-
-### Fixed
-- Control de gasto sincronizado (`PerplexitySettingsState`), registro de coste en ambas vías (panel y acción de editor).
-- Serialización JSON de `messages` mediante `JSONArray`/`JSONObject`.
-- Timeouts HTTP configurados (30s conexión, 60s lectura, 30s escritura).
-- Bug en `canMakeRequest()`: eliminación de `isMonthStarted`.
-- Registros faltantes en `plugin.xml` (application service y configurable).
-- Inserción de texto en editor activo (`FileEditorManager.selectedTextEditor`).
-- Eliminación de instancia estática del panel y de código muerto (`OpenSettingsAction`).
+- Versión a 1.2.0.
 
 ### Security
-- La API key se gestiona exclusivamente a través de `PasswordSafe`; no se hardcodea ni se registra en logs.
+- La API key se gestiona exclusivamente a través de `PasswordSafe`.
 
 ## [1.1.0] - 2025-11-25
 
