@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.phosky.antoniojuan"
-version = "1.1.0"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -23,6 +23,9 @@ dependencies {
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         bundledPlugin("com.intellij.java")
     }
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 intellijPlatform {
@@ -31,8 +34,23 @@ intellijPlatform {
             sinceBuild = "231"
         }
         changeNotes = """
-            Initial version
+            See CHANGELOG.md for release notes.
         """.trimIndent()
+    }
+    pluginVerification {
+        ides {
+            ide("IC", "2023.1.7")
+            ide("IC", "2024.1.7")
+            ide("IC", "2025.2.1")
+        }
+    }
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
 }
 

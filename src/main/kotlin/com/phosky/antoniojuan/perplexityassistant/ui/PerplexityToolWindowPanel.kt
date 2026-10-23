@@ -4,6 +4,10 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.ui.JBColor
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
+import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
 import okhttp3.MediaType.Companion.toMediaType
@@ -19,7 +23,14 @@ import javax.swing.*
 import javax.swing.border.LineBorder
 
 class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
+    companion object {
+        private const val MAX_CHAT_MESSAGES = 50
+    }
+    private var emptyStateLabel: JLabel? = null
     private val settings = PerplexitySettingsState.getInstance()
+    private val historyMessages = mutableListOf<Pair<String, String>>()
+    private val configureKeyButton = JButton("Open Settings")
+    private val modelSelector = JComboBox(arrayOf("sonar", "sonar-pro", "sonar-reasoning-pro"))
 
     private val settingsButton = JButton("Settings")
     private val apiKeyStatus = JLabel()
@@ -29,11 +40,6 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     private val chatScrollPane = JScrollPane(chatPanel)
     private val promptField = JTextField()
     private val sendButton = JButton("Send")
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     init {
         val topPanel = JPanel(BorderLayout())
@@ -45,69 +51,33 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         statusPanel.add(limitStatus)
         statusPanel.add(monthlyUsageStatus)
         topPanel.add(statusPanel, BorderLayout.CENTER)
+        topPanel.add(modelSelector, BorderLayout.EAST)
+
+        modelSelector.selectedItem = settings.selectedModel
+        modelSelector.addActionListener {
+            settings.selectedModel = modelSelector.selectedItem as String
+        }
 
         updateStatus()
 
-        // Settings action with option to reset spending
-        settingsButton.addActionListener {
-            val dialog = JDialog(
-                SwingUtilities.getWindowAncestor(this),
-                "Perplexity Settings",
-                Dialog.ModalityType.APPLICATION_MODAL
-            )
-            dialog.layout = BorderLayout()
-
-            val panel = JPanel()
-            panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-
-            val apiKeyField = JPasswordField(30)
-            apiKeyField.text = PerplexityCredentials.getApiKey() ?: ""
-
-            val apiKeySave = JButton("Save API Key")
-            apiKeySave.addActionListener {
-                val key = String(apiKeyField.password)
-                if (key.isNotBlank()) {
-                    PerplexityCredentials.saveApiKey(key)
-                    JOptionPane.showMessageDialog(dialog, "API Key saved successfully.")
-                    updateStatus()
-                }
+        if (settings.historyEnabled) {
+            ChatHistoryStore.load().forEach { (p, r) ->
+                historyMessages.add(p to r)
+                addChatMessage(p, r)
             }
-
-            val limitField = JTextField(settings.monthlyLimitUsd.toString(), 8)
-            val limitSave = JButton("Save monthly limit")
-            limitSave.addActionListener {
-                val value = limitField.text.toDoubleOrNull()
-                if (value != null && value >= 0.01) {
-                    settings.monthlyLimitUsd = value
-                    JOptionPane.showMessageDialog(dialog, "Limit saved successfully.")
-                    updateStatus()
-                }
-            }
-
-            val resetUsageBtn = JButton("Reset monthly spending")
-            resetUsageBtn.addActionListener {
-                settings.resetUsage()
-                JOptionPane.showMessageDialog(dialog, "Monthly spending counter reset.")
-                updateStatus()
-            }
-
-            panel.add(JLabel("API Key:"))
-            panel.add(apiKeyField)
-            panel.add(apiKeySave)
-            panel.add(Box.createVerticalStrut(10))
-            panel.add(JLabel("Monthly limit (USD):"))
-            panel.add(limitField)
-            panel.add(limitSave)
-            panel.add(Box.createVerticalStrut(10))
-            panel.add(resetUsageBtn)
-
-            dialog.add(panel, BorderLayout.CENTER)
-            dialog.pack()
-            dialog.setLocationRelativeTo(this)
-            dialog.isVisible = true
         }
 
-        chatScrollPane.preferredSize = Dimension(500, 350)
+        // Settings action opens the IDE settings configurable
+        settingsButton.addActionListener {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Perplexity Assistant")
+        }
+
+        chatScrollPane.preferredSize = JBUI.size(400, 300)
+
+        emptyStateLabel = JLabel("Send a prompt to start", SwingConstants.CENTER)
+        emptyStateLabel?.foreground = JBColor.gray
+        chatPanel.add(emptyStateLabel)
 
         val promptPanel = JPanel(BorderLayout())
         promptPanel.add(promptField, BorderLayout.CENTER)
@@ -129,7 +99,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 JOptionPane.showMessageDialog(this, "Configure the API Key first in Settings.")
                 return@addActionListener
             }
-            if (!settings.canMakeRequest()) {
+            if (!settings.canMakeRequest(settings.estimatedCostPerRequestUsd)) {
                 JOptionPane.showMessageDialog(this, "Monthly limit reached (${settings.monthlyLimitUsd} USD).")
                 return@addActionListener
             }
@@ -137,46 +107,82 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
     }
 
+    private var onboardingShown = false
+    private var lastRequestTokens = 0
+    private var lastRequestCost = 0.0
+
     private fun updateStatus() {
         val keyStatus = if (PerplexityCredentials.getApiKey().isNullOrBlank())
             "API Key: Not configured" else "API Key: OK"
         apiKeyStatus.text = keyStatus
         limitStatus.text = "Monthly limit: ${settings.monthlyLimitUsd} USD"
         monthlyUsageStatus.text = "Spent this month: ${String.format("%.4f", settings.usedUsdThisMonth)} USD"
+        if (PerplexitySettingsState.isNearLimit(settings.usedUsdThisMonth, settings.monthlyLimitUsd)) {
+            monthlyUsageStatus.text = "⚠ " + monthlyUsageStatus.text
+            monthlyUsageStatus.foreground = JBColor.RED
+        } else {
+            monthlyUsageStatus.foreground = UIUtil.getLabelForeground()
+        }
+        monthlyUsageStatus.toolTipText = "Last request: $lastRequestTokens tokens, ${String.format("%.6f", lastRequestCost)} USD"
+
+        val keyMissing = PerplexityCredentials.getApiKey().isNullOrBlank()
+        if (keyMissing) {
+            if (!onboardingShown) {
+                onboardingShown = true
+                JOptionPane.showMessageDialog(
+                    this,
+                    "No API key configured. Your prompts and code are sent to Perplexity. Configure your key in Settings.",
+                    "Perplexity Assistant",
+                    JOptionPane.INFORMATION_MESSAGE
+                )
+            }
+            if (configureKeyButton.parent == null) {
+                chatPanel.add(Box.createVerticalStrut(8))
+                chatPanel.add(configureKeyButton)
+                chatPanel.revalidate()
+                chatPanel.repaint()
+            }
+            configureKeyButton.addActionListener {
+                com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                    .showSettingsDialog(project, "Perplexity Assistant")
+            }
+        } else {
+            chatPanel.remove(configureKeyButton)
+        }
     }
 
     fun getPromptText(): String = promptField.text.orEmpty()
 
     fun showResponse(prompt: String, response: String) {
         addChatMessage(prompt, response)
+        historyMessages.add(prompt to response)
+        if (settings.historyEnabled) {
+            ChatHistoryStore.save(historyMessages)
+        }
         promptField.text = ""
         updateStatus()
     }
 
     fun addChatMessage(prompt: String, response: String) {
-        val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
-        messagePanel.border = LineBorder(Color.GRAY, 1)
-        messagePanel.add(JLabel("<html><b>Prompt:</b> $prompt</html>"))
-
-        val responseArea = JTextArea(response).apply {
-            isEditable = false
-            lineWrap = true
-            wrapStyleWord = true
+        emptyStateLabel?.let { chatPanel.remove(it); emptyStateLabel = null }
+        while (chatPanel.componentCount >= MAX_CHAT_MESSAGES * 2) {
+            chatPanel.remove(0)
         }
+        val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
+        messagePanel.border = JBUI.Borders.customLine(JBColor.border(), 1)
+        messagePanel.add(JLabel("<html><b>Prompt:</b> ${MarkdownRenderer.escapeHtml(prompt)}</html>"))
+
+        val contentPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
+        renderMarkdown(contentPanel, response)
+        messagePanel.add(contentPanel)
 
         val buttonPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-        val insertButton = JButton("Insert in editor")
-        insertButton.addActionListener { insertTextInEditor(response) }
         val copyButton = JButton("Copy response")
         copyButton.addActionListener {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(response), null)
         }
-
-        buttonPanel.add(insertButton)
         buttonPanel.add(copyButton)
-
-        messagePanel.add(responseArea)
         messagePanel.add(buttonPanel)
 
         chatPanel.add(Box.createVerticalStrut(8))
@@ -186,102 +192,113 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         SwingUtilities.invokeLater { chatScrollPane.verticalScrollBar.value = chatScrollPane.verticalScrollBar.maximum }
     }
 
+    private fun renderMarkdown(container: JPanel, text: String) {
+        val segments = text.split("```")
+        for (i in segments.indices) {
+            if (i % 2 == 0) {
+                val html = MarkdownRenderer.toHtml(segments[i])
+                if (html.isNotBlank()) {
+                    val label = JLabel("<html>$html</html>")
+                    label.border = JBUI.Borders.empty(4, 0)
+                    container.add(label)
+                }
+            } else {
+                var code = segments[i]
+                val firstLine = code.lines().firstOrNull() ?: ""
+                val language = if (firstLine.trim().matches(Regex("[a-zA-Z0-9+#-]+"))) firstLine.trim() else ""
+                if (language.isNotEmpty()) code = code.substringAfter("\n", code)
+                val codeArea = JTextArea(code.trimEnd())
+                codeArea.isEditable = false
+                codeArea.font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, codeArea.font.size)
+                codeArea.border = JBUI.Borders.customLine(JBColor.border(), 1)
+                val scroll = JScrollPane(codeArea)
+                scroll.preferredSize = JBUI.size(400, 120)
+                container.add(scroll)
+
+                val actions = JPanel(FlowLayout(FlowLayout.RIGHT))
+                val copy = JButton("Copy")
+                copy.addActionListener {
+                    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                    clipboard.setContents(StringSelection(code.trimEnd()), null)
+                }
+                val insert = JButton("Insert")
+                insert.addActionListener { insertTextInEditor(code.trimEnd()) }
+                val replace = JButton("Replace")
+                replace.addActionListener { replaceSelectionInEditor(code.trimEnd()) }
+                actions.add(copy)
+                actions.add(insert)
+                actions.add(replace)
+                container.add(actions)
+            }
+        }
+    }
+
+    private fun replaceSelectionInEditor(text: String) {
+        val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        val selection = editor.selectionModel
+        if (!selection.hasSelection()) {
+            insertTextInEditor(text)
+            return
+        }
+        val document = editor.document
+        val start = selection.selectionStart
+        val end = selection.selectionEnd
+        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
+            document.replaceString(start, end, text)
+        }
+    }
+
     private fun insertTextInEditor(text: String) {
-        val editor = EditorFactory.getInstance().allEditors
-            .firstOrNull { it.project == project } ?: return
+        val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor ?: return
         val document = editor.document
         val caretOffset = editor.caretModel.offset
-        WriteCommandAction.runWriteCommandAction(project) {
+        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
             document.insertString(caretOffset, text)
         }
     }
 
     private fun sendPromptToPerplexity(prompt: String, apiKey: String) {
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(
-            {
-                val (response, cost) = callPerplexityApiWithCost(prompt, apiKey)
-                settings.registerRequest(cost)
-                SwingUtilities.invokeLater {
-                    showResponse(prompt, response)
-                }
-            },
-            "Sending to Perplexity...",
-            true,
-            project
-        )
+        sendButton.isEnabled = false
+        try {
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                {
+                    val progress = ProgressManager.getInstance().progressIndicator
+                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, progress, settings.selectedModel)
+                    if (result.canceled) return@runProcessWithProgressSynchronously
+                    if (result.errorMessage == null) {
+                        settings.registerRequest(result.costUsd)
+                    lastRequestCost = result.costUsd
+                    lastRequestTokens = result.promptTokens + result.completionTokens
+                    }
+                    SwingUtilities.invokeLater {
+                        if (result.errorMessage == null) {
+                            showResponse(prompt, result.text)
+                        } else {
+                            JOptionPane.showMessageDialog(this, result.errorMessage)
+                        }
+                        updateStatus()
+                    }
+                },
+                "Sending to Perplexity...",
+                true,
+                project
+            )
+        } finally {
+            SwingUtilities.invokeLater { sendButton.isEnabled = true }
+        }
     }
 
-    // Returns response and actual cost (double)
-    private fun callPerplexityApiWithCost(prompt: String, apiKey: String): Pair<String, Double> {
-        return try {
-            val url = "https://api.perplexity.ai/chat/completions"
-            val mediaType = "application/json".toMediaType()
+}
 
-            // Build messages array properly using JSONArray
-            val messagesArray = JSONArray()
-            messagesArray.put(JSONObject().put("role", "system").put("content", settings.basePrompt))
-            messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
+object MarkdownRenderer {
+    fun escapeHtml(s: String): String =
+        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-            val json = JSONObject()
-            json.put("model", "sonar-pro")
-            json.put("messages", messagesArray)
-
-            val body = json.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .post(body)
-                .build()
-
-            client.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    return Pair("Perplexity error: HTTP ${resp.code} - ${resp.message}", 0.0)
-                }
-
-                val respBody = resp.body?.string().orEmpty()
-                val obj = JSONObject(respBody)
-
-                val choices = obj.optJSONArray("choices")
-                val answer = if (choices != null && choices.length() > 0) {
-                    choices.getJSONObject(0).getJSONObject("message").optString("content", "No response.")
-                } else {
-                    "Empty response from Perplexity."
-                }
-
-                // Parse usage information from response
-                val usage = obj.optJSONObject("usage")
-                val promptTokens = usage?.optInt("prompt_tokens", 0) ?: 0
-                val completionTokens = usage?.optInt("completion_tokens", 0) ?: 0
-                val tokens = promptTokens + completionTokens
-
-                // Estimate cost based on sonar-pro pricing ($3 per 1M input, $15 per 1M output)
-                val estimatedCost = (promptTokens * 0.000003) + (completionTokens * 0.000015)
-
-                // Parse citations if available
-                val citations = obj.optJSONArray("citations")
-                val citationsList = mutableListOf<String>()
-                if (citations != null) {
-                    for (i in 0 until citations.length()) {
-                        citationsList.add(citations.getString(i))
-                    }
-                }
-
-                val responseInfo = buildString {
-                    append(answer)
-                    append("\n\n--- Request Info ---\n")
-                    append("Total tokens: $tokens\n")
-                    append("Estimated cost: ${String.format("%.6f", estimatedCost)} USD\n")
-                    if (citationsList.isNotEmpty()) {
-                        append("Citations:\n")
-                        citationsList.forEach { cite -> append("- $cite\n") }
-                    }
-                }
-
-                Pair(responseInfo, estimatedCost)
-            }
-        } catch (t: Throwable) {
-            Pair("Error calling Perplexity: ${t.message}", 0.0)
-        }
+    fun toHtml(s: String): String {
+        var h = escapeHtml(s)
+        h = h.replace(Regex("`([^`]+)`")) { "<code>${it.groupValues[1]}</code>" }
+        h = h.replace(Regex("\\*\\*([^*]+)\\*\\*")) { "<b>${it.groupValues[1]}</b>" }
+        h = h.replace("\n", "<br/>")
+        return h
     }
 }

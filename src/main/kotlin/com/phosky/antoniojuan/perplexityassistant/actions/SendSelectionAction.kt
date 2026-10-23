@@ -8,25 +8,14 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.wm.ToolWindowManager
+import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
-import com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
+import com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowPanel
 
 class SendSelectionAction : AnAction() {
 
     private val logger = Logger.getInstance(SendSelectionAction::class.java)
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
@@ -35,22 +24,24 @@ class SendSelectionAction : AnAction() {
         val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Perplexity")
         toolWindow?.show()
 
-        val panel = PerplexityToolWindowFactory.instance ?: return
+        val panel = toolWindow?.contentManager?.contents?.firstOrNull()?.component as? PerplexityToolWindowPanel
+            ?: return
 
-        val prompt = panel.getPromptText()
+        val selectedText = editor.selectionModel.selectedText
+        val prompt = if (!selectedText.isNullOrBlank()) selectedText else panel.getPromptText()
         if (prompt.isBlank()) {
             Messages.showInfoMessage(project, "Enter a prompt or select text in the editor.", "Perplexity")
             return
         }
 
         val apiKey = PerplexityCredentials.getApiKey()
-        if (apiKey.isNullOrBlank() || apiKey == "***************") {
+        if (apiKey.isNullOrBlank()) {
             Messages.showErrorDialog(project, "Configure the Perplexity API key first.", "Perplexity")
             return
         }
 
         val settings = PerplexitySettingsState.getInstance()
-        if (!settings.canMakeRequest()) {
+        if (!settings.canMakeRequest(settings.estimatedCostPerRequestUsd)) {
             Messages.showWarningDialog(
                 project,
                 "You have reached the configured monthly limit (${settings.monthlyLimitUsd} USD).",
@@ -61,57 +52,23 @@ class SendSelectionAction : AnAction() {
 
         ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val responseText = callPerplexity(apiKey, prompt)
+                val result = PerplexityClient.chat(prompt, apiKey, "", false, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator, settings.selectedModel)
+                if (result.canceled) return@runProcessWithProgressSynchronously
+                if (result.errorMessage == null) {
+                    settings.registerRequest(result.costUsd)
+                }
                 ApplicationManager.getApplication().invokeLater {
-                    panel.showResponse(prompt, responseText)
+                    if (result.canceled) return@invokeLater
+                    if (result.errorMessage == null) {
+                        panel.showResponse(prompt, result.text)
+                    } else {
+                        Messages.showErrorDialog(project, result.errorMessage, "Perplexity")
+                    }
                 }
             },
             "Sending to Perplexity...",
             true,
             project
         )
-    }
-
-    private fun callPerplexity(apiKey: String, prompt: String): String {
-        return try {
-            val url = "https://api.perplexity.ai/chat/completions"
-            val mediaType = "application/json".toMediaType()
-
-            // Build messages array properly using JSONArray
-            val messagesArray = JSONArray()
-            messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
-
-            val json = JSONObject()
-            json.put("model", "sonar-pro")
-            json.put("messages", messagesArray)
-
-            val body = json.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .post(body)
-                .build()
-
-            client.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    return "Perplexity error: HTTP ${resp.code} - ${resp.message}"
-                }
-
-                val respBody = resp.body?.string().orEmpty()
-                val obj = JSONObject(respBody)
-
-                val choices = obj.optJSONArray("choices")
-                if (choices == null || choices.length() == 0) {
-                    return "Empty response from Perplexity."
-                }
-
-                val message = choices.getJSONObject(0).getJSONObject("message")
-                message.getString("content")
-            }
-        } catch (t: Throwable) {
-            logger.warn("Error calling Perplexity", t)
-            "Error calling Perplexity: ${t.message}"
-        }
     }
 }

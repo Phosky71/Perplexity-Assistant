@@ -20,8 +20,12 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
     var usedUsdThisMonth: Double = 0.0
     var currentMonth: String = YearMonth.now().toString()
 
+    var quickActionPrompts: MutableMap<String, String> = defaultQuickActionPrompts()
+
+    var historyEnabled: Boolean = false
+    var selectedModel: String = "sonar-pro"
+
     var basePrompt: String = """
-        You are an expert programming assistant specialized in code refactoring, technical explanation, and best practices.
         You must analyze the content sent to you and respond clearly, organized, and professionally.
         Your main job is to help understand code, suggest improvements, find bugs, and optimize both logic and style according to the detected language.
 
@@ -39,28 +43,53 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
         XmlSerializerUtil.copyBean(state, this)
     }
 
-    fun canMakeRequest(): Boolean {
-        val nowMonth = YearMonth.now().toString()
-        
-        // If it's a new month, reset the usage counter
-        if (nowMonth != currentMonth) {
-            currentMonth = nowMonth
-            usedUsdThisMonth = 0.0
+    fun canMakeRequest(estimatedCost: Double = estimatedCostPerRequestUsd): Boolean {
+        synchronized(this) {
+            val nowMonth = YearMonth.now().toString()
+
+            if (nowMonth != currentMonth) {
+                currentMonth = nowMonth
+                usedUsdThisMonth = 0.0
+            }
+
+            return usedUsdThisMonth + estimatedCost <= monthlyLimitUsd
         }
-        
-        // Check if adding another request would exceed the monthly limit
-        return usedUsdThisMonth + estimatedCostPerRequestUsd <= monthlyLimitUsd
     }
 
     fun registerRequest(cost: Double) {
-        usedUsdThisMonth += cost
+        synchronized(this) {
+            usedUsdThisMonth += cost
+        }
     }
 
     fun resetUsage() {
-        usedUsdThisMonth = 0.0
+        synchronized(this) {
+            usedUsdThisMonth = 0.0
+        }
+    }
+
+    fun resetQuickActionPrompts() {
+        synchronized(this) {
+            quickActionPrompts = defaultQuickActionPrompts()
+        }
     }
 
     companion object {
+        const val USAGE_WARNING_THRESHOLD = 0.8
+
+        fun isNearLimit(used: Double, limit: Double, threshold: Double = USAGE_WARNING_THRESHOLD): Boolean {
+            return limit > 0 && (used / limit) >= threshold
+        }
+
+        @JvmStatic
+        fun defaultQuickActionPrompts(): MutableMap<String, String> = mutableMapOf(
+            "explain" to "Explain the following code clearly:\n\n{code}",
+            "review" to "Review the following code for bugs and improvements:\n\n{code}",
+            "refactor" to "Refactor the following code for readability and maintainability:\n\n{code}",
+            "tests" to "Generate unit tests for the following code:\n\n{code}",
+            "docs" to "Generate documentation comments for the following code:\n\n{code}"
+        )
+
         @JvmStatic
         fun getInstance(): PerplexitySettingsState {
             return ApplicationManager.getApplication().getService(PerplexitySettingsState::class.java)

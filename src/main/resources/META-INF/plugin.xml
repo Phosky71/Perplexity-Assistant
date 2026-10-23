@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.phosky.antoniojuan.perplexityassistant</id>
     <name>Perplexity Sonar Pro Assistant</name>
-    <version>1.1.0</version>
+    <version>1.3.0</version>
     <description>
         Plugin to send code and prompts to Perplexity (sonar-pro) and display the response in a chat-style
         tool window.
@@ -37,6 +37,15 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
+
+        <group id="Perplexity.QuickActions" text="Perplexity Quick Actions" popup="true">
+            <action id="Perplexity.Explain" class="com.phosky.antoniojuan.perplexityassistant.actions.ExplainAction" text="Explain"/>
+            <action id="Perplexity.Review" class="com.phosky.antoniojuan.perplexityassistant.actions.ReviewAction" text="Review"/>
+            <action id="Perplexity.Refactor" class="com.phosky.antoniojuan.perplexityassistant.actions.RefactorAction" text="Refactor"/>
+            <action id="Perplexity.Tests" class="com.phosky.antoniojuan.perplexityassistant.actions.TestsAction" text="Tests"/>
+            <action id="Perplexity.Docs" class="com.phosky.antoniojuan.perplexityassistant.actions.DocsAction" text="Docs"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </group>
 
 <!--        <action id="Perplexity.OpenSettings"-->
 <!--                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"-->

@@ -61,6 +61,10 @@ cd Perplexity-Assistant
 # The plugin zip will be in build/distributions/
 ```
 
+## Documentation
+
+See the [`docs/`](docs/) directory for architecture, development, security, operations, and project state. Architecture decisions are recorded in [`docs/decisions/`](docs/decisions/).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -86,20 +90,25 @@ If you encounter any issues or have suggestions, please [open an issue](https://
 
 ## Project Status
 
-> ⚠️ **Important Notice**: This plugin is considered complete for personal use. **It is unlikely that I will continue working on this plugin**, and therefore **it will not be published to the JetBrains Plugin Marketplace**. Users can download and install it manually from the [Releases](https://github.com/Phosky71/Perplexity-Assistant/releases) section.
+Current version: **1.3.0**. The plugin is under active development and has not been published to the JetBrains Plugin Marketplace yet (plugin name and publication are pending, see ADR-008 and TECH-003).
 
-The plugin is functional and has been tested to work correctly. All critical bugs have been fixed. However, future development and new features are not planned at this time.
+Implemented so far:
+- Chat tool window with Markdown rendering and code actions (copy/insert/replace).
+- Send selection / send file context with preview.
+- Quick actions: Explain, Review, Refactor, Tests, Docs.
+- Model selector (sonar, sonar-pro, sonar-reasoning-pro) with per-model cost estimation.
+- Usage tracking with monthly limit and 80% warning.
+- Optional local chat history (opt-in).
+- Request cancellation.
+- Secure API key storage via PasswordSafe.
+
+Compatibility verified with IntelliJ Platform 231, 241 and 252 (erifyPlugin).
 
 ## Future Improvements
 
-While active development is not planned, the following features could be implemented in the future if the project is resumed:
+Potential next steps (see docs/product/PROPOSALS-2026-10-23.md):
+- Streaming responses (if the API supports it).
+- Kotlin UI DSL migration (UI-002, planned for 1.4.0).
+- Persisted multi-conversation history and export.
 
-- **Insert in Editor**: Ability to insert AI-generated code suggestions directly into the editor at cursor position
-- **UI/Interface Improvements**: Enhanced user interface design and better structure for improved usability
-- **Customizable Display Options**: More settings to allow users to choose what to display in prompts:
-  - Toggle visibility of sources/references
-  - Show/hide token count
-  - Display cost estimation
-  - Customize response formatting
-
-Contributions from the community are welcome if anyone wants to implement these features or fix issues.
+Contributions from the community are welcome.
