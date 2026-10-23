@@ -5,6 +5,7 @@ import com.intellij.openapi.options.Configurable
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import java.time.YearMonth
+import com.phosky.antoniojuan.perplexityassistant.ui.ChatHistoryStore
 import javax.swing.*
 
 class PerplexitySettingsConfigurable : Configurable {
@@ -57,6 +58,18 @@ class PerplexitySettingsConfigurable : Configurable {
                 JOptionPane.showMessageDialog(panel, "Quick action prompts reset.")
             }
             form.add(resetPromptsButton)
+
+            val historyCheckbox = JCheckBox("Enable chat history (opt-in)")
+            historyCheckbox.isSelected = settings.historyEnabled
+            historyCheckbox.addActionListener { settings.historyEnabled = historyCheckbox.isSelected }
+            form.add(historyCheckbox)
+
+            val clearHistoryButton = JButton("Clear history")
+            clearHistoryButton.addActionListener {
+                ChatHistoryStore.clear()
+                JOptionPane.showMessageDialog(panel, "History cleared.")
+            }
+            form.add(clearHistoryButton)
 
             panel!!.add(form, BorderLayout.NORTH)
 

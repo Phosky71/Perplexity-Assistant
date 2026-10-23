@@ -28,6 +28,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     }
     private var emptyStateLabel: JLabel? = null
     private val settings = PerplexitySettingsState.getInstance()
+    private val historyMessages = mutableListOf<Pair<String, String>>()
     private val configureKeyButton = JButton("Open Settings")
     private val modelSelector = JComboBox(arrayOf("sonar", "sonar-pro", "sonar-reasoning-pro"))
 
@@ -58,6 +59,13 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
 
         updateStatus()
+
+        if (settings.historyEnabled) {
+            ChatHistoryStore.load().forEach { (p, r) ->
+                historyMessages.add(p to r)
+                addChatMessage(p, r)
+            }
+        }
 
         // Settings action opens the IDE settings configurable
         settingsButton.addActionListener {
@@ -147,6 +155,10 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
 
     fun showResponse(prompt: String, response: String) {
         addChatMessage(prompt, response)
+        historyMessages.add(prompt to response)
+        if (settings.historyEnabled) {
+            ChatHistoryStore.save(historyMessages)
+        }
         promptField.text = ""
         updateStatus()
     }

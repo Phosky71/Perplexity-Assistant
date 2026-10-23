@@ -22,6 +22,7 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
 
     var quickActionPrompts: MutableMap<String, String> = defaultQuickActionPrompts()
 
+    var historyEnabled: Boolean = false
     var selectedModel: String = "sonar-pro"
 
     var basePrompt: String = """
