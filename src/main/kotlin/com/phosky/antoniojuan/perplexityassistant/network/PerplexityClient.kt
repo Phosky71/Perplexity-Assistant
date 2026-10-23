@@ -20,7 +20,8 @@ data class PerplexityResult(
     val completionTokens: Int = 0,
     val costUsd: Double = 0.0,
     val httpCode: Int? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val canceled: Boolean = false
 ) {
     val isSuccess: Boolean get() = errorMessage == null
 }
@@ -36,7 +37,7 @@ object PerplexityClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL): PerplexityResult {
+    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL, progress: com.intellij.openapi.progress.ProgressIndicator? = null): PerplexityResult {
         return try {
             val body = buildPayload(prompt, basePrompt, includeSystemPrompt).toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
@@ -46,11 +47,28 @@ object PerplexityClient {
                 .post(body)
                 .build()
 
-            client.newCall(request).execute().use { resp ->
-                val respBody = resp.body?.string().orEmpty()
-                parseResponse(resp.code, respBody, resp.isSuccessful)
+            val call = client.newCall(request)
+            val watcher = if (progress != null) {
+                Thread {
+                    while (!call.isCanceled() && !progress.isCanceled) {
+                        try { Thread.sleep(50) } catch (e: InterruptedException) { break }
+                        if (progress.isCanceled) call.cancel()
+                    }
+                }.apply { isDaemon = true; start() }
+            } else null
+
+            val result = try {
+                call.execute().use { resp ->
+                    val respBody = resp.body?.string().orEmpty()
+                    parseResponse(resp.code, respBody, resp.isSuccessful)
+                }
+            } catch (e: java.io.IOException) {
+                if (call.isCanceled()) PerplexityResult(text = "Canceled", canceled = true)
+                else PerplexityResult(text = "Error calling Perplexity: ${e.message}", errorMessage = "Error calling Perplexity: ${e.message}")
             }
-        } catch (e: ProcessCanceledException) {
+            watcher?.interrupt()
+            result
+        } catch (e: com.intellij.openapi.progress.ProcessCanceledException) {
             throw e
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
             throw e

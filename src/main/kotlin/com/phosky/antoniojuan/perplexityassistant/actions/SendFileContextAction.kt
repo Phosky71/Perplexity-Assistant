@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
@@ -87,7 +88,8 @@ class SendFileContextAction : AnAction() {
 
         com.intellij.openapi.progress.ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
+                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator)
+                if (result.canceled) return@runProcessWithProgressSynchronously
                 if (result.errorMessage == null) settings.registerRequest(result.costUsd)
                 com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
                     if (result.errorMessage == null) uiPanel?.showResponse(prompt, result.text)

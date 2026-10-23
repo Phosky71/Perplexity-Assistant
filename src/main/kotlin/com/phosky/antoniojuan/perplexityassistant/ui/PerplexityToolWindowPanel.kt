@@ -243,7 +243,9 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         try {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
-                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
+                    val progress = ProgressManager.getInstance().progressIndicator
+                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, progress)
+                    if (result.canceled) return@runProcessWithProgressSynchronously
                     if (result.errorMessage == null) {
                         settings.registerRequest(result.costUsd)
                     lastRequestCost = result.costUsd
