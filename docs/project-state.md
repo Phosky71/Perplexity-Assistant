@@ -2,7 +2,7 @@
 
 ## Identidad
 
-Plugin de IntelliJ que integra Perplexity AI (`sonar-pro`) en un tool window de chat. Versión actual: `1.2.0`.
+Plugin de IntelliJ que integra Perplexity AI (`sonar-pro`) en un tool window de chat. Versión actual: `1.3.0`.
 
 ## Estado actual
 

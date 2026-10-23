@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-23
+
+### Added
+- Selector de modelo (sonar, sonar-pro, sonar-reasoning-pro) con tabla de precios por modelo.
+- Historial de chat opcional (opt-in) con almacenamiento local y borrado.
+- Cancelación de requests en curso.
+- Tests de plataforma (MockWebServer, persistencia round-trip).
+
+### Changed
+- I/O mediante ProgressManager con cancelación.
+- Versión a 1.3.0.
+
+### Security
+- La API key se gestiona exclusivamente a través de `PasswordSafe`.
+
 ## [1.2.0] - 2026-10-23
 
 ### Added
@@ -27,12 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-11-25
 
 ### Added
-- Versión inicial del plugin "Perplexity Sonar Pro Assistant" (tool window de chat, envío de prompt, inserción/copia de respuestas, control de gasto mensual).
-- Integración con la API de Perplexity (`sonar-pro`) mediante OkHttp.
-- Acción de editor `Send Selection to Perplexity` (atajo `Ctrl+Alt+P`).
-- Configuración de aplicación (API key, prompt base, coste estimado, límite mensual).
-- `README.md` y licencia MIT.
+- Versión inicial del plugin.
 
 ### Changed
-- Traducción de etiquetas de UI y mensajes a inglés.
-- Actualización de `plugin.xml` y `build.gradle.kts` (compatibilidad hasta 262.*).
+- Compatibilidad hasta 262.*.
