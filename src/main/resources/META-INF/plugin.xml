@@ -38,6 +38,13 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
 
+        <action id="Perplexity.SendFileContext"
+                class="com.phosky.antoniojuan.perplexityassistant.actions.SendFileContextAction"
+                text="Send File Context to Perplexity"
+                description="Send current file context to Perplexity">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
 <!--        <action id="Perplexity.OpenSettings"-->
 <!--                class="com.phosky.antoniojuan.perplexityassistant.actions.OpenSettingsAction"-->
 <!--                text="Perplexity Settings"-->
