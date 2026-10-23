@@ -20,6 +20,9 @@ import javax.swing.*
 import javax.swing.border.LineBorder
 
 class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
+    companion object {
+        private const val MAX_CHAT_MESSAGES = 50
+    }
     private val settings = PerplexitySettingsState.getInstance()
 
     private val settingsButton = JButton("Settings")
@@ -150,6 +153,9 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     }
 
     fun addChatMessage(prompt: String, response: String) {
+        while (chatPanel.componentCount >= MAX_CHAT_MESSAGES * 2) {
+            chatPanel.remove(0)
+        }
         val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
         messagePanel.border = LineBorder(Color.GRAY, 1)
         messagePanel.add(JLabel("<html><b>Prompt:</b> $prompt</html>"))
@@ -183,35 +189,39 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     }
 
     private fun insertTextInEditor(text: String) {
-        val editor = EditorFactory.getInstance().allEditors
-            .firstOrNull { it.project == project } ?: return
+        val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor ?: return
         val document = editor.document
         val caretOffset = editor.caretModel.offset
-        WriteCommandAction.runWriteCommandAction(project) {
+        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
             document.insertString(caretOffset, text)
         }
     }
 
     private fun sendPromptToPerplexity(prompt: String, apiKey: String) {
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(
-            {
-                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
-                if (result.errorMessage == null) {
-                    settings.registerRequest(result.costUsd)
-                }
-                SwingUtilities.invokeLater {
+        sendButton.isEnabled = false
+        try {
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                {
+                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
                     if (result.errorMessage == null) {
-                        showResponse(prompt, result.text)
-                    } else {
-                        JOptionPane.showMessageDialog(this, result.errorMessage)
+                        settings.registerRequest(result.costUsd)
                     }
-                    updateStatus()
-                }
-            },
-            "Sending to Perplexity...",
-            true,
-            project
-        )
+                    SwingUtilities.invokeLater {
+                        if (result.errorMessage == null) {
+                            showResponse(prompt, result.text)
+                        } else {
+                            JOptionPane.showMessageDialog(this, result.errorMessage)
+                        }
+                        updateStatus()
+                    }
+                },
+                "Sending to Perplexity...",
+                true,
+                project
+            )
+        } finally {
+            SwingUtilities.invokeLater { sendButton.isEnabled = true }
+        }
     }
 
 }

@@ -11,7 +11,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
-import com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowFactory
+import com.phosky.antoniojuan.perplexityassistant.ui.PerplexityToolWindowPanel
 
 class SendSelectionAction : AnAction() {
 
@@ -24,7 +24,8 @@ class SendSelectionAction : AnAction() {
         val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Perplexity")
         toolWindow?.show()
 
-        val panel = PerplexityToolWindowFactory.instance ?: return
+        val panel = toolWindow?.contentManager?.contents?.firstOrNull()?.component as? PerplexityToolWindowPanel
+            ?: return
 
         val selectedText = editor.selectionModel.selectedText
         val prompt = if (!selectedText.isNullOrBlank()) selectedText else panel.getPromptText()

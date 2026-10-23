@@ -7,13 +7,8 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 
 class PerplexityToolWindowFactory : ToolWindowFactory, DumbAware {
-    companion object {
-        var instance: PerplexityToolWindowPanel? = null
-    }
-
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = PerplexityToolWindowPanel(project)
-        instance = panel
         val contentFactory = ContentFactory.getInstance()
         val content = contentFactory.createContent(panel, "", false)
         toolWindow.contentManager.addContent(content)
