@@ -39,25 +39,31 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
         XmlSerializerUtil.copyBean(state, this)
     }
 
-    fun canMakeRequest(): Boolean {
-        val nowMonth = YearMonth.now().toString()
-        
-        // If it's a new month, reset the usage counter
-        if (nowMonth != currentMonth) {
-            currentMonth = nowMonth
-            usedUsdThisMonth = 0.0
+    fun canMakeRequest(estimatedCost: Double = estimatedCostPerRequestUsd): Boolean {
+        synchronized(this) {
+            val nowMonth = YearMonth.now().toString()
+
+            // If it's a new month, reset the usage counter
+            if (nowMonth != currentMonth) {
+                currentMonth = nowMonth
+                usedUsdThisMonth = 0.0
+            }
+
+            // Check if adding another request would exceed the monthly limit
+            return usedUsdThisMonth + estimatedCost <= monthlyLimitUsd
         }
-        
-        // Check if adding another request would exceed the monthly limit
-        return usedUsdThisMonth + estimatedCostPerRequestUsd <= monthlyLimitUsd
     }
 
     fun registerRequest(cost: Double) {
-        usedUsdThisMonth += cost
+        synchronized(this) {
+            usedUsdThisMonth += cost
+        }
     }
 
     fun resetUsage() {
-        usedUsdThisMonth = 0.0
+        synchronized(this) {
+            usedUsdThisMonth = 0.0
+        }
     }
 
     companion object {

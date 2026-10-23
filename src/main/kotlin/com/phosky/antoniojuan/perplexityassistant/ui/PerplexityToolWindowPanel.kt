@@ -4,6 +4,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,11 +30,6 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     private val chatScrollPane = JScrollPane(chatPanel)
     private val promptField = JTextField()
     private val sendButton = JButton("Send")
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     init {
         val topPanel = JPanel(BorderLayout())
@@ -129,7 +125,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                 JOptionPane.showMessageDialog(this, "Configure the API Key first in Settings.")
                 return@addActionListener
             }
-            if (!settings.canMakeRequest()) {
+            if (!settings.canMakeRequest(settings.estimatedCostPerRequestUsd)) {
                 JOptionPane.showMessageDialog(this, "Monthly limit reached (${settings.monthlyLimitUsd} USD).")
                 return@addActionListener
             }
@@ -199,10 +195,17 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     private fun sendPromptToPerplexity(prompt: String, apiKey: String) {
         ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val (response, cost) = callPerplexityApiWithCost(prompt, apiKey)
-                settings.registerRequest(cost)
+                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
+                if (result.errorMessage == null) {
+                    settings.registerRequest(result.costUsd)
+                }
                 SwingUtilities.invokeLater {
-                    showResponse(prompt, response)
+                    if (result.errorMessage == null) {
+                        showResponse(prompt, result.text)
+                    } else {
+                        JOptionPane.showMessageDialog(this, result.errorMessage)
+                    }
+                    updateStatus()
                 }
             },
             "Sending to Perplexity...",
@@ -211,77 +214,4 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         )
     }
 
-    // Returns response and actual cost (double)
-    private fun callPerplexityApiWithCost(prompt: String, apiKey: String): Pair<String, Double> {
-        return try {
-            val url = "https://api.perplexity.ai/chat/completions"
-            val mediaType = "application/json".toMediaType()
-
-            // Build messages array properly using JSONArray
-            val messagesArray = JSONArray()
-            messagesArray.put(JSONObject().put("role", "system").put("content", settings.basePrompt))
-            messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
-
-            val json = JSONObject()
-            json.put("model", "sonar-pro")
-            json.put("messages", messagesArray)
-
-            val body = json.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .post(body)
-                .build()
-
-            client.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    return Pair("Perplexity error: HTTP ${resp.code} - ${resp.message}", 0.0)
-                }
-
-                val respBody = resp.body?.string().orEmpty()
-                val obj = JSONObject(respBody)
-
-                val choices = obj.optJSONArray("choices")
-                val answer = if (choices != null && choices.length() > 0) {
-                    choices.getJSONObject(0).getJSONObject("message").optString("content", "No response.")
-                } else {
-                    "Empty response from Perplexity."
-                }
-
-                // Parse usage information from response
-                val usage = obj.optJSONObject("usage")
-                val promptTokens = usage?.optInt("prompt_tokens", 0) ?: 0
-                val completionTokens = usage?.optInt("completion_tokens", 0) ?: 0
-                val tokens = promptTokens + completionTokens
-
-                // Estimate cost based on sonar-pro pricing ($3 per 1M input, $15 per 1M output)
-                val estimatedCost = (promptTokens * 0.000003) + (completionTokens * 0.000015)
-
-                // Parse citations if available
-                val citations = obj.optJSONArray("citations")
-                val citationsList = mutableListOf<String>()
-                if (citations != null) {
-                    for (i in 0 until citations.length()) {
-                        citationsList.add(citations.getString(i))
-                    }
-                }
-
-                val responseInfo = buildString {
-                    append(answer)
-                    append("\n\n--- Request Info ---\n")
-                    append("Total tokens: $tokens\n")
-                    append("Estimated cost: ${String.format("%.6f", estimatedCost)} USD\n")
-                    if (citationsList.isNotEmpty()) {
-                        append("Citations:\n")
-                        citationsList.forEach { cite -> append("- $cite\n") }
-                    }
-                }
-
-                Pair(responseInfo, estimatedCost)
-            }
-        } catch (t: Throwable) {
-            Pair("Error calling Perplexity: ${t.message}", 0.0)
-        }
-    }
 }
