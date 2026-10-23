@@ -14,12 +14,6 @@ An IntelliJ IDEA plugin that integrates Perplexity AI directly into your IDE, pr
 
 ## Installation
 
-### From JetBrains Marketplace
-1. Open your JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, etc.)
-2. Go to `Settings/Preferences` > `Plugins` > `Marketplace`
-3. Search for "Perplexity Assistant"
-4. Click `Install`
-
 ### Manual Installation
 1. Download the latest release from [Releases](https://github.com/Phosky71/Perplexity-Assistant/releases)
 2. Go to `Settings/Preferences` > `Plugins` > `⚙️` > `Install Plugin from Disk...`
@@ -93,3 +87,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter any issues or have suggestions, please [open an issue](https://github.com/Phosky71/Perplexity-Assistant/issues).
+
+## Project Status
+
+> ⚠️ **Important Notice**: This plugin is considered complete for personal use. **It is unlikely that I will continue working on this plugin**, and therefore **it will not be published to the JetBrains Plugin Marketplace**. Users can download and install it manually from the [Releases](https://github.com/Phosky71/Perplexity-Assistant/releases) section.
+
+The plugin is functional and has been tested to work correctly. All critical bugs have been fixed. However, future development and new features are not planned at this time.
+
+## Future Improvements
+
+While active development is not planned, the following features could be implemented in the future if the project is resumed:
+
+- **Insert in Editor**: Ability to insert AI-generated code suggestions directly into the editor at cursor position
+- **UI/Interface Improvements**: Enhanced user interface design and better structure for improved usability
+- **Customizable Display Options**: More settings to allow users to choose what to display in prompts:
+  - Toggle visibility of sources/references
+  - Show/hide token count
+  - Display cost estimation
+  - Customize response formatting
+
+Contributions from the community are welcome if anyone wants to implement these features or fix issues.
