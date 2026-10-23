@@ -34,7 +34,7 @@ intellijPlatform {
             sinceBuild = "231"
         }
         changeNotes = """
-            Initial version
+            See CHANGELOG.md for release notes.
         """.trimIndent()
     }
     pluginVerification {
@@ -42,6 +42,14 @@ intellijPlatform {
             ide("IC", "2023.1.7")
             ide("IC", "2024.1.7")
         }
+    }
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
 }
 
