@@ -47,6 +47,13 @@ class PerplexitySettingsConfigurable : Configurable {
             form.add(startMonthButton)
             form.add(resetUsageButton)
 
+            val resetPromptsButton = JButton("Reset quick action prompts")
+            resetPromptsButton.addActionListener {
+                PerplexitySettingsState.getInstance().resetQuickActionPrompts()
+                JOptionPane.showMessageDialog(panel, "Quick action prompts reset.")
+            }
+            form.add(resetPromptsButton)
+
             panel!!.add(form, BorderLayout.NORTH)
 
             startMonthButton.addActionListener {
