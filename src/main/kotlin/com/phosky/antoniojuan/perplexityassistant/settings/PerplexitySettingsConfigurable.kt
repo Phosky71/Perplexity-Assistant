@@ -42,7 +42,11 @@ class PerplexitySettingsConfigurable : Configurable {
             form.add(JLabel("Estimated cost per request (USD):"))
             form.add(costField)
             form.add(JLabel("Monthly limit (USD):"))
-            form.add(limitField)
+            val modelSelector = JComboBox(arrayOf("sonar", "sonar-pro", "sonar-reasoning-pro"))
+            modelSelector.selectedItem = settings.selectedModel
+            modelSelector.addActionListener { settings.selectedModel = modelSelector.selectedItem as String }
+            form.add(JLabel("Model:"))
+            form.add(modelSelector)
             form.add(statusLabel)
             form.add(startMonthButton)
             form.add(resetUsageButton)

@@ -22,8 +22,9 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
 
     var quickActionPrompts: MutableMap<String, String> = defaultQuickActionPrompts()
 
+    var selectedModel: String = "sonar-pro"
+
     var basePrompt: String = """
-        You are an expert programming assistant specialized in code refactoring, technical explanation, and best practices.
         You must analyze the content sent to you and respond clearly, organized, and professionally.
         Your main job is to help understand code, suggest improvements, find bugs, and optimize both logic and style according to the detected language.
 

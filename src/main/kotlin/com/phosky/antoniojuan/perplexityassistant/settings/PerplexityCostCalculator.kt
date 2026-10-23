@@ -5,6 +5,10 @@ object PerplexityCostCalculator {
     const val OUTPUT_PRICE_PER_TOKEN = 0.000015
 
     fun estimateCost(promptTokens: Int, completionTokens: Int): Double {
-        return (promptTokens * INPUT_PRICE_PER_TOKEN) + (completionTokens * OUTPUT_PRICE_PER_TOKEN)
+        return ModelPricing.estimateCost("sonar-pro", promptTokens, completionTokens)
+    }
+
+    fun estimateCost(model: String, promptTokens: Int, completionTokens: Int): Double {
+        return ModelPricing.estimateCost(model, promptTokens, completionTokens)
     }
 }

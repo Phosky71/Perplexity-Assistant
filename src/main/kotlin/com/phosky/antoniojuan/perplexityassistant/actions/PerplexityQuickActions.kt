@@ -47,7 +47,7 @@ abstract class PerplexityQuickAction(
 
         ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator)
+                val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator, settings.selectedModel)
                 if (result.canceled) return@runProcessWithProgressSynchronously
                 if (result.errorMessage == null) settings.registerRequest(result.costUsd)
                 ApplicationManager.getApplication().invokeLater {

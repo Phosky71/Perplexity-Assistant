@@ -1,6 +1,6 @@
 package com.phosky.antoniojuan.perplexityassistant.network
 
-import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCostCalculator
+import com.phosky.antoniojuan.perplexityassistant.settings.ModelPricing
 import com.intellij.openapi.progress.ProcessCanceledException
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -37,9 +37,9 @@ object PerplexityClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL, progress: com.intellij.openapi.progress.ProgressIndicator? = null): PerplexityResult {
+    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL, progress: com.intellij.openapi.progress.ProgressIndicator? = null, model: String = MODEL): PerplexityResult {
         return try {
-            val body = buildPayload(prompt, basePrompt, includeSystemPrompt).toRequestBody("application/json".toMediaType())
+            val body = buildPayload(prompt, basePrompt, includeSystemPrompt, model).toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
                 .url(baseUrl)
                 .addHeader("Authorization", "Bearer $apiKey")
@@ -60,7 +60,7 @@ object PerplexityClient {
             val result = try {
                 call.execute().use { resp ->
                     val respBody = resp.body?.string().orEmpty()
-                    parseResponse(resp.code, respBody, resp.isSuccessful)
+                    parseResponse(resp.code, respBody, resp.isSuccessful, model)
                 }
             } catch (e: java.io.IOException) {
                 if (call.isCanceled()) PerplexityResult(text = "Canceled", canceled = true)
@@ -77,19 +77,19 @@ object PerplexityClient {
         }
     }
 
-    internal fun buildPayload(prompt: String, basePrompt: String, includeSystemPrompt: Boolean): String {
+    internal fun buildPayload(prompt: String, basePrompt: String, includeSystemPrompt: Boolean, model: String = MODEL): String {
         val messagesArray = JSONArray()
         if (includeSystemPrompt && basePrompt.isNotBlank()) {
             messagesArray.put(JSONObject().put("role", "system").put("content", basePrompt))
         }
         messagesArray.put(JSONObject().put("role", "user").put("content", prompt))
         val json = JSONObject()
-        json.put("model", MODEL)
+        json.put("model", model)
         json.put("messages", messagesArray)
         return json.toString()
     }
 
-    internal fun parseResponse(httpCode: Int, body: String, isSuccessful: Boolean): PerplexityResult {
+    internal fun parseResponse(httpCode: Int, body: String, isSuccessful: Boolean, model: String = MODEL): PerplexityResult {
         if (!isSuccessful) {
             val message = extractErrorMessage(body)
             val err = "Perplexity error: HTTP $httpCode - ${message ?: ""}".trim()
@@ -107,7 +107,7 @@ object PerplexityClient {
             val usage = obj.optJSONObject("usage")
             val promptTokens = usage?.optInt("prompt_tokens", 0) ?: 0
             val completionTokens = usage?.optInt("completion_tokens", 0) ?: 0
-            val cost = PerplexityCostCalculator.estimateCost(promptTokens, completionTokens)
+            val cost = ModelPricing.estimateCost(model, promptTokens, completionTokens)
 
             val citations = mutableListOf<String>()
             val citationsArr = obj.optJSONArray("citations")

@@ -52,7 +52,7 @@ class SendSelectionAction : AnAction() {
 
         ProgressManager.getInstance().runProcessWithProgressSynchronously(
             {
-                val result = PerplexityClient.chat(prompt, apiKey, "", false, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator)
+                val result = PerplexityClient.chat(prompt, apiKey, "", false, PerplexityClient.API_URL, ProgressManager.getInstance().progressIndicator, settings.selectedModel)
                 if (result.canceled) return@runProcessWithProgressSynchronously
                 if (result.errorMessage == null) {
                     settings.registerRequest(result.costUsd)

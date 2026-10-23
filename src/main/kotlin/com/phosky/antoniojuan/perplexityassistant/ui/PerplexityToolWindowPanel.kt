@@ -27,8 +27,9 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         private const val MAX_CHAT_MESSAGES = 50
     }
     private var emptyStateLabel: JLabel? = null
-    private val configureKeyButton = JButton("Open Settings")
     private val settings = PerplexitySettingsState.getInstance()
+    private val configureKeyButton = JButton("Open Settings")
+    private val modelSelector = JComboBox(arrayOf("sonar", "sonar-pro", "sonar-reasoning-pro"))
 
     private val settingsButton = JButton("Settings")
     private val apiKeyStatus = JLabel()
@@ -49,6 +50,12 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         statusPanel.add(limitStatus)
         statusPanel.add(monthlyUsageStatus)
         topPanel.add(statusPanel, BorderLayout.CENTER)
+        topPanel.add(modelSelector, BorderLayout.EAST)
+
+        modelSelector.selectedItem = settings.selectedModel
+        modelSelector.addActionListener {
+            settings.selectedModel = modelSelector.selectedItem as String
+        }
 
         updateStatus()
 
@@ -244,7 +251,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
                     val progress = ProgressManager.getInstance().progressIndicator
-                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, progress)
+                    val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true, PerplexityClient.API_URL, progress, settings.selectedModel)
                     if (result.canceled) return@runProcessWithProgressSynchronously
                     if (result.errorMessage == null) {
                         settings.registerRequest(result.costUsd)
