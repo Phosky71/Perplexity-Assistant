@@ -1,6 +1,6 @@
 # ADR-007 — Persistencia del historial de chat
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto

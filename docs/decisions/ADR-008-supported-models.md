@@ -1,6 +1,6 @@
 # ADR-008 — Modelos soportados
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto

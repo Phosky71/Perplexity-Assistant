@@ -2,37 +2,38 @@
 
 ## Identidad
 
-Plugin de IntelliJ que integra Perplexity AI (`sonar-pro`) en un tool window de chat. Versión actual: `1.3.0`.
+Plugin de IntelliJ que integra Perplexity AI en un tool window de chat. Versión actual: `1.3.0`.
 
 ## Estado actual
 
-- Funcionalidad core operativa; auditoría 2026-10-23 corregida (24/25).
+- Funcionalidad core operativa: chat, contexto del editor, acciones rápidas, Markdown, panel de uso, selector de modelo, historial opcional, cancelación.
 - UI y mensajes en inglés.
 - Persistencia de settings y API key segura.
-- Compatibilidad hasta IDE 262.*.
+- Compatibilidad verificada con IDE 231, 241, 252.
+- No publicado en JetBrains Marketplace (pendiente).
 
 ## Cambios recientes
 
-- Núcleo HTTP compartido (`PerplexityClient`), control de gasto sincronizado, ciclo de vida del panel.
-- Inserción en editor activo, botón Send deshabilitado durante request, límite de historial.
-- Consolidación de settings y PasswordSafe fuera del EDT.
-- Documentación: propuestas de producto y rediseño de UI.
+- Merge de `feat/1.3.0` en `master` (release 1.3.0).
+- Historial opcional, selector de modelo, cancelación, tests de plataforma.
+- README reconciliado con estado real.
 
 ## Decisiones recientes
 
 - ADR-001 (Aceptado): API key con PasswordSafe.
-- ADR-002 (Aceptado): Estimación de coste por tokens.
-- ADR-003 (Propuesto): Límite mensual basado en coste real estimado (implementación parcial: `canMakeRequest(estimatedCost)` con fallback).
-- ADR-004 (Aceptado): Consolidación de la UI de settings (commit 7fed4cc).
-- ADR-005 (Propuesto): Framework de UI.
-- ADR-006 (Propuesto): Renderizado de Markdown.
-- ADR-007 (Borrador): Persistencia del historial.
-- ADR-008 (Borrador): Modelos soportados.
+- ADR-002 (Aceptado): Estimación de coste por tokens (por modelo en ADR-008).
+- ADR-003 (Propuesto): Límite mensual basado en coste real estimado (implementación parcial).
+- ADR-004 (Aceptado): Consolidación de la UI de settings.
+- ADR-005 (Aceptado): Framework de UI (Swing pulido).
+- ADR-006 (Aceptado): Renderizado de Markdown.
+- ADR-007 (Aceptado): Persistencia del historial (opt-in).
+- ADR-008 (Aceptado): Modelos soportados.
 
 ## Trabajo pendiente
 
-- Implementación de 1.2.0 (UI-001, FEAT-009, FEAT-005, FEAT-001, FEAT-002, FEAT-003, TECH-003).
-- BUG-014: No verificado (pricing oficial).
+- UI-002 (Kotlin UI DSL) aplazado a 1.4.0.
+- BUG-014: parcial (precios de tokens verificados; cargos de búsqueda no modelados).
+- Publicación en Marketplace (TECH-003) pendiente de decisión de nombre.
 
 ## Sesiones OpenCode
 
@@ -40,4 +41,7 @@ Plugin de IntelliJ que integra Perplexity AI (`sonar-pro`) en un tool window de 
 `opencode -s ses_e97e32996ffebXgInwPBCyR72U`
 
 ### 2026-10-23 — Estudio de producto y rediseño UI
+`opencode -s ses_e97e32996ffebXgInwPBCyR72U`
+
+### 2026-10-23 — Release 1.3.0 y sincronización master
 `opencode -s ses_e97e32996ffebXgInwPBCyR72U`
