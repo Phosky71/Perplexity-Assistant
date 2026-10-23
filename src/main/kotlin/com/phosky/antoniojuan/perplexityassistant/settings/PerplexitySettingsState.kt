@@ -67,6 +67,12 @@ class PerplexitySettingsState : PersistentStateComponent<PerplexitySettingsState
     }
 
     companion object {
+        const val USAGE_WARNING_THRESHOLD = 0.8
+
+        fun isNearLimit(used: Double, limit: Double, threshold: Double = USAGE_WARNING_THRESHOLD): Boolean {
+            return limit > 0 && (used / limit) >= threshold
+        }
+
         @JvmStatic
         fun getInstance(): PerplexitySettingsState {
             return ApplicationManager.getApplication().getService(PerplexitySettingsState::class.java)

@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import com.phosky.antoniojuan.perplexityassistant.network.PerplexityClient
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexityCredentials
 import com.phosky.antoniojuan.perplexityassistant.settings.PerplexitySettingsState
@@ -92,6 +93,8 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
     }
 
     private var onboardingShown = false
+    private var lastRequestTokens = 0
+    private var lastRequestCost = 0.0
 
     private fun updateStatus() {
         val keyStatus = if (PerplexityCredentials.getApiKey().isNullOrBlank())
@@ -99,6 +102,13 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         apiKeyStatus.text = keyStatus
         limitStatus.text = "Monthly limit: ${settings.monthlyLimitUsd} USD"
         monthlyUsageStatus.text = "Spent this month: ${String.format("%.4f", settings.usedUsdThisMonth)} USD"
+        if (PerplexitySettingsState.isNearLimit(settings.usedUsdThisMonth, settings.monthlyLimitUsd)) {
+            monthlyUsageStatus.text = "⚠ " + monthlyUsageStatus.text
+            monthlyUsageStatus.foreground = JBColor.RED
+        } else {
+            monthlyUsageStatus.foreground = UIUtil.getLabelForeground()
+        }
+        monthlyUsageStatus.toolTipText = "Last request: $lastRequestTokens tokens, ${String.format("%.6f", lastRequestCost)} USD"
 
         val keyMissing = PerplexityCredentials.getApiKey().isNullOrBlank()
         if (keyMissing) {
@@ -188,6 +198,8 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
                     val result = PerplexityClient.chat(prompt, apiKey, settings.basePrompt, true)
                     if (result.errorMessage == null) {
                         settings.registerRequest(result.costUsd)
+                    lastRequestCost = result.costUsd
+                    lastRequestTokens = result.promptTokens + result.completionTokens
                     }
                     SwingUtilities.invokeLater {
                         if (result.errorMessage == null) {

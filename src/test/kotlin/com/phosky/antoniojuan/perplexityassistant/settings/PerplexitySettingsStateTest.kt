@@ -51,6 +51,16 @@ class PerplexitySettingsStateTest {
     }
 
     @Test
+    fun isNearLimit_trueAt80Percent() {
+        assertTrue(PerplexitySettingsState.isNearLimit(4.0, 5.0))
+    }
+
+    @Test
+    fun isNearLimit_falseBelow80() {
+        assertFalse(PerplexitySettingsState.isNearLimit(3.0, 5.0))
+    }
+
+    @Test
     fun resetUsage_clearsCounter() {
         val s = PerplexitySettingsState()
         s.usedUsdThisMonth = 1.23
