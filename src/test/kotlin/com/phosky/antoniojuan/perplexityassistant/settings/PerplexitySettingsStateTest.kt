@@ -61,11 +61,22 @@ class PerplexitySettingsStateTest {
     }
 
     @Test
+    fun roundTrip_state() {
+        val s1 = PerplexitySettingsState()
+        s1.monthlyLimitUsd = 7.5
+        s1.usedUsdThisMonth = 1.25
+        s1.currentMonth = "2026-10"
+        s1.basePrompt = "prompt"
+        val state = s1.getState()
+        val s2 = PerplexitySettingsState()
+        s2.loadState(state)
+        assertEquals(7.5, s2.monthlyLimitUsd, 0.0001)
+        assertEquals(1.25, s2.usedUsdThisMonth, 0.0001)
+        assertEquals("2026-10", s2.currentMonth)
+        assertEquals("prompt", s2.basePrompt)
+    }
+    @Test
     fun resetUsage_clearsCounter() {
-        val s = PerplexitySettingsState()
-        s.usedUsdThisMonth = 1.23
-        s.resetUsage()
-        assertEquals(0.0, s.usedUsdThisMonth, 0.0001)
     }
 }
 

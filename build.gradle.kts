@@ -25,7 +25,7 @@ dependencies {
     }
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 intellijPlatform {
@@ -41,6 +41,7 @@ intellijPlatform {
         ides {
             ide("IC", "2023.1.7")
             ide("IC", "2024.1.7")
+            ide("IC", "2025.2.1")
         }
     }
     publishing {

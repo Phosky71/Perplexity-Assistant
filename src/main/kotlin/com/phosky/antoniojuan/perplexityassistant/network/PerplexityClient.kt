@@ -36,11 +36,11 @@ object PerplexityClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true): PerplexityResult {
+    fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL): PerplexityResult {
         return try {
             val body = buildPayload(prompt, basePrompt, includeSystemPrompt).toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
-                .url(API_URL)
+                .url(baseUrl)
                 .addHeader("Authorization", "Bearer $apiKey")
                 .addHeader("Content-Type", "application/json")
                 .post(body)
