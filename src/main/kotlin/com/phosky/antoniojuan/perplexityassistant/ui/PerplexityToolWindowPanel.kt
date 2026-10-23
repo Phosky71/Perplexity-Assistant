@@ -26,6 +26,7 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         private const val MAX_CHAT_MESSAGES = 50
     }
     private var emptyStateLabel: JLabel? = null
+    private val configureKeyButton = JButton("Open Settings")
     private val settings = PerplexitySettingsState.getInstance()
 
     private val settingsButton = JButton("Settings")
@@ -90,12 +91,39 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
     }
 
+    private var onboardingShown = false
+
     private fun updateStatus() {
         val keyStatus = if (PerplexityCredentials.getApiKey().isNullOrBlank())
             "API Key: Not configured" else "API Key: OK"
         apiKeyStatus.text = keyStatus
         limitStatus.text = "Monthly limit: ${settings.monthlyLimitUsd} USD"
         monthlyUsageStatus.text = "Spent this month: ${String.format("%.4f", settings.usedUsdThisMonth)} USD"
+
+        val keyMissing = PerplexityCredentials.getApiKey().isNullOrBlank()
+        if (keyMissing) {
+            if (!onboardingShown) {
+                onboardingShown = true
+                JOptionPane.showMessageDialog(
+                    this,
+                    "No API key configured. Your prompts and code are sent to Perplexity. Configure your key in Settings.",
+                    "Perplexity Assistant",
+                    JOptionPane.INFORMATION_MESSAGE
+                )
+            }
+            if (configureKeyButton.parent == null) {
+                chatPanel.add(Box.createVerticalStrut(8))
+                chatPanel.add(configureKeyButton)
+                chatPanel.revalidate()
+                chatPanel.repaint()
+            }
+            configureKeyButton.addActionListener {
+                com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                    .showSettingsDialog(project, "Perplexity Assistant")
+            }
+        } else {
+            chatPanel.remove(configureKeyButton)
+        }
     }
 
     fun getPromptText(): String = promptField.text.orEmpty()
