@@ -151,27 +151,19 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
         val messagePanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
         messagePanel.border = JBUI.Borders.customLine(JBColor.border(), 1)
-        messagePanel.add(JLabel("<html><b>Prompt:</b> $prompt</html>"))
+        messagePanel.add(JLabel("<html><b>Prompt:</b> ${MarkdownRenderer.escapeHtml(prompt)}</html>"))
 
-        val responseArea = JTextArea(response).apply {
-            isEditable = false
-            lineWrap = true
-            wrapStyleWord = true
-        }
+        val contentPanel = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
+        renderMarkdown(contentPanel, response)
+        messagePanel.add(contentPanel)
 
         val buttonPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-        val insertButton = JButton("Insert in editor")
-        insertButton.addActionListener { insertTextInEditor(response) }
         val copyButton = JButton("Copy response")
         copyButton.addActionListener {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(response), null)
         }
-
-        buttonPanel.add(insertButton)
         buttonPanel.add(copyButton)
-
-        messagePanel.add(responseArea)
         messagePanel.add(buttonPanel)
 
         chatPanel.add(Box.createVerticalStrut(8))
@@ -179,6 +171,62 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         chatPanel.revalidate()
         chatPanel.repaint()
         SwingUtilities.invokeLater { chatScrollPane.verticalScrollBar.value = chatScrollPane.verticalScrollBar.maximum }
+    }
+
+    private fun renderMarkdown(container: JPanel, text: String) {
+        val segments = text.split("```")
+        for (i in segments.indices) {
+            if (i % 2 == 0) {
+                val html = MarkdownRenderer.toHtml(segments[i])
+                if (html.isNotBlank()) {
+                    val label = JLabel("<html>$html</html>")
+                    label.border = JBUI.Borders.empty(4, 0)
+                    container.add(label)
+                }
+            } else {
+                var code = segments[i]
+                val firstLine = code.lines().firstOrNull() ?: ""
+                val language = if (firstLine.trim().matches(Regex("[a-zA-Z0-9+#-]+"))) firstLine.trim() else ""
+                if (language.isNotEmpty()) code = code.substringAfter("\n", code)
+                val codeArea = JTextArea(code.trimEnd())
+                codeArea.isEditable = false
+                codeArea.font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, codeArea.font.size)
+                codeArea.border = JBUI.Borders.customLine(JBColor.border(), 1)
+                val scroll = JScrollPane(codeArea)
+                scroll.preferredSize = JBUI.size(400, 120)
+                container.add(scroll)
+
+                val actions = JPanel(FlowLayout(FlowLayout.RIGHT))
+                val copy = JButton("Copy")
+                copy.addActionListener {
+                    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+                    clipboard.setContents(StringSelection(code.trimEnd()), null)
+                }
+                val insert = JButton("Insert")
+                insert.addActionListener { insertTextInEditor(code.trimEnd()) }
+                val replace = JButton("Replace")
+                replace.addActionListener { replaceSelectionInEditor(code.trimEnd()) }
+                actions.add(copy)
+                actions.add(insert)
+                actions.add(replace)
+                container.add(actions)
+            }
+        }
+    }
+
+    private fun replaceSelectionInEditor(text: String) {
+        val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        val selection = editor.selectionModel
+        if (!selection.hasSelection()) {
+            insertTextInEditor(text)
+            return
+        }
+        val document = editor.document
+        val start = selection.selectionStart
+        val end = selection.selectionEnd
+        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(project) {
+            document.replaceString(start, end, text)
+        }
     }
 
     private fun insertTextInEditor(text: String) {
@@ -219,4 +267,17 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
         }
     }
 
+}
+
+object MarkdownRenderer {
+    fun escapeHtml(s: String): String =
+        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    fun toHtml(s: String): String {
+        var h = escapeHtml(s)
+        h = h.replace(Regex("`([^`]+)`")) { "<code>${it.groupValues[1]}</code>" }
+        h = h.replace(Regex("\\*\\*([^*]+)\\*\\*")) { "<b>${it.groupValues[1]}</b>" }
+        h = h.replace("\n", "<br/>")
+        return h
+    }
 }
