@@ -26,12 +26,7 @@ Plugin de IntelliJ que integra Perplexity AI (`sonar-pro`) en un tool window de 
 
 ## Trabajo pendiente
 
-Severidad por ID (ver `docs/audit/AUDIT-2026-10-23.md`):
-
-- Alta: BUG-001, DEBT-005.
-- Media: BUG-002, BUG-003, BUG-004, BUG-005, BUG-006, BUG-007, BUG-011, BUG-012, DEBT-001, BUILD-001.
-- Baja: BUG-008, BUG-009, BUG-010, BUG-013, BUG-015, SEC-001, DEBT-002, DEBT-003.
-- Info: BUG-014 (No verificado), SEC-002, SEC-003, DEBT-004, PERF-001, DOC-001.
+Todos los hallazgos de la auditoría 2026-10-23 han sido corregidos salvo BUG-014 (No verificado, pricing oficial de sonar-pro). Ver `docs/audit/AUDIT-2026-10-23.md` sección 9.
 
 ## Sesiones OpenCode
 

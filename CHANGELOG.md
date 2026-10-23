@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Documentación: auditoría de código y seguridad registrada en `docs/audit/AUDIT-2026-10-23.md` (sin cambios de código).
 
+### Fixed
+- Núcleo HTTP compartido (`PerplexityClient`), control de gasto sincronizado, ciclo de vida del panel, inserción en editor activo, deshabilitado de Send, límite de historial, consolidación de settings, gitignore de `.intellijPlatform`.
+
 ## [1.1.0] - 2025-11-25
 
 ### Added
