@@ -67,6 +67,10 @@ cd Perplexity-Assistant
 # The plugin zip will be in build/distributions/
 ```
 
+## Documentation
+
+See the [`docs/`](docs/) directory for architecture, development, security, operations, and project state. Architecture decisions are recorded in [`docs/decisions/`](docs/decisions/).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
