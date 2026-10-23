@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - La API key se gestiona exclusivamente a través de `PasswordSafe`; no se hardcodea ni se registra en logs.
 
+### Changed
+- Documentación: auditoría de código y seguridad registrada en `docs/audit/AUDIT-2026-10-23.md` (sin cambios de código).
+
 ## [1.1.0] - 2025-11-25
 
 ### Added
