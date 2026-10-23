@@ -1,6 +1,6 @@
 # ADR-004 — Consolidación de la UI de settings
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto

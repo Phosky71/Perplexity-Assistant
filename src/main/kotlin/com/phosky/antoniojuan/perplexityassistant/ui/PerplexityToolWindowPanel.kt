@@ -47,63 +47,10 @@ class PerplexityToolWindowPanel(val project: Project) : JPanel(BorderLayout()) {
 
         updateStatus()
 
-        // Settings action with option to reset spending
+        // Settings action opens the IDE settings configurable
         settingsButton.addActionListener {
-            val dialog = JDialog(
-                SwingUtilities.getWindowAncestor(this),
-                "Perplexity Settings",
-                Dialog.ModalityType.APPLICATION_MODAL
-            )
-            dialog.layout = BorderLayout()
-
-            val panel = JPanel()
-            panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-
-            val apiKeyField = JPasswordField(30)
-            apiKeyField.text = PerplexityCredentials.getApiKey() ?: ""
-
-            val apiKeySave = JButton("Save API Key")
-            apiKeySave.addActionListener {
-                val key = String(apiKeyField.password)
-                if (key.isNotBlank()) {
-                    PerplexityCredentials.saveApiKey(key)
-                    JOptionPane.showMessageDialog(dialog, "API Key saved successfully.")
-                    updateStatus()
-                }
-            }
-
-            val limitField = JTextField(settings.monthlyLimitUsd.toString(), 8)
-            val limitSave = JButton("Save monthly limit")
-            limitSave.addActionListener {
-                val value = limitField.text.toDoubleOrNull()
-                if (value != null && value >= 0.01) {
-                    settings.monthlyLimitUsd = value
-                    JOptionPane.showMessageDialog(dialog, "Limit saved successfully.")
-                    updateStatus()
-                }
-            }
-
-            val resetUsageBtn = JButton("Reset monthly spending")
-            resetUsageBtn.addActionListener {
-                settings.resetUsage()
-                JOptionPane.showMessageDialog(dialog, "Monthly spending counter reset.")
-                updateStatus()
-            }
-
-            panel.add(JLabel("API Key:"))
-            panel.add(apiKeyField)
-            panel.add(apiKeySave)
-            panel.add(Box.createVerticalStrut(10))
-            panel.add(JLabel("Monthly limit (USD):"))
-            panel.add(limitField)
-            panel.add(limitSave)
-            panel.add(Box.createVerticalStrut(10))
-            panel.add(resetUsageBtn)
-
-            dialog.add(panel, BorderLayout.CENTER)
-            dialog.pack()
-            dialog.setLocationRelativeTo(this)
-            dialog.isVisible = true
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Perplexity Assistant")
         }
 
         chatScrollPane.preferredSize = Dimension(500, 350)

@@ -1,6 +1,6 @@
 # ADR-003 — Límite mensual basado en coste real estimado
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-10-23
 
 ## Contexto
