@@ -1,6 +1,7 @@
 package com.phosky.antoniojuan.perplexityassistant.network
 
 import com.phosky.antoniojuan.perplexityassistant.settings.ModelPricing
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -10,6 +11,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.net.URL
 import java.util.concurrent.TimeUnit
 
 data class PerplexityResult(
@@ -31,17 +33,49 @@ object PerplexityClient {
     const val API_URL = "https://api.perplexity.ai/chat/completions"
     const val MODEL = "sonar-pro"
 
+    private val LOG = Logger.getInstance(PerplexityClient::class.java)
+
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    /**
+     * Resuelve la URL base para la API.
+     * Si existe la propiedad de sistema `perplexity.api.url` y su host es localhost o 127.0.0.1 (http/https),
+     * se usa esa URL. En cualquier otro caso se ignora y se registra un aviso.
+     * Esto evita que alguien redirija la API key a un servidor ajeno.
+     */
+    internal fun resolveApiUrl(): String {
+        val overrideUrl = System.getProperty("perplexity.api.url")
+        if (overrideUrl.isNullOrBlank()) return API_URL
+        return try {
+            val url = URL(overrideUrl)
+            val host = url.host.lowercase()
+            if (host == "localhost" || host == "127.0.0.1") {
+                if (url.protocol == "http" || url.protocol == "https") {
+                    overrideUrl
+                } else {
+                    LOG.warn("perplexity.api.url ignorada: protocolo no soportado (${url.protocol}). Se usa la URL por defecto.")
+                    API_URL
+                }
+            } else {
+                LOG.warn("perplexity.api.url ignorada: host no permitido ($host). Solo localhost/127.0.0.1 en desarrollo.")
+                API_URL
+            }
+        } catch (e: Exception) {
+            LOG.warn("perplexity.api.url inválida: ${e.message}. Se usa la URL por defecto.")
+            API_URL
+        }
+    }
+
     fun chat(prompt: String, apiKey: String, basePrompt: String = "", includeSystemPrompt: Boolean = true, baseUrl: String = API_URL, progress: com.intellij.openapi.progress.ProgressIndicator? = null, model: String = MODEL): PerplexityResult {
+        val effectiveUrl = if (baseUrl == API_URL) resolveApiUrl() else baseUrl
         return try {
             val body = buildPayload(prompt, basePrompt, includeSystemPrompt, model).toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
-                .url(baseUrl)
+                .url(effectiveUrl)
                 .addHeader("Authorization", "Bearer $apiKey")
                 .addHeader("Content-Type", "application/json")
                 .post(body)
