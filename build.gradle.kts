@@ -39,9 +39,9 @@ intellijPlatform {
     }
     pluginVerification {
         ides {
-            ide("IC", "2023.1.7")
-            ide("IC", "2024.1.7")
-            ide("IC", "2025.2.1")
+            create("IC", "2023.1.7")
+            create("IC", "2024.1.7")
+            create("IC", "2025.2.1")
         }
     }
     publishing {
@@ -65,6 +65,16 @@ tasks {
     compileJava {
         targetCompatibility = "17"
         sourceCompatibility = "17"
+    }
+
+    // Configuración para runIde con mock API
+    // Uso: ./gradlew runIde -PmockApi
+    val mockApi: Boolean by project.extra(false)
+    val runIde = named("runIde", org.gradle.api.tasks.JavaExec::class.java)
+    runIde.configure {
+        if (mockApi) {
+            jvmArgs?.add("-Dperplexity.api.url=http://127.0.0.1:8765/chat/completions")
+        }
     }
 }
 
