@@ -17,6 +17,7 @@ Plugin de IntelliJ que integra Perplexity AI en un tool window de chat. Versión
 - Merge de `feat/1.3.0` en `master` (release 1.3.0).
 - Historial opcional, selector de modelo, cancelación, tests de plataforma.
 - README reconciliado con estado real.
+- Merge de `dev/mock-api`: override de URL de desarrollo (`perplexity.api.url`), servidor mock local (`scripts/mock-perplexity.py`), tests de seguridad (rechazo de hosts maliciosos).
 
 ## Decisiones recientes
 
@@ -32,8 +33,9 @@ Plugin de IntelliJ que integra Perplexity AI en un tool window de chat. Versión
 ## Trabajo pendiente
 
 - UI-002 (Kotlin UI DSL) aplazado a 1.4.0.
-- BUG-014: parcial (precios de tokens verificados; cargos de búsqueda no modelados).
-- Publicación en Marketplace (TECH-003) pendiente de decisión de nombre.
+- BUG-014: parcial (precios de tokens verificados; cargos de búsqueda no modelados). La estimación solo cubre tokens input/output; no incluye el cargo por petición de búsqueda ni los tokens de razonamiento/citations. Falta contrastar con peticiones reales y la documentación oficial de Perplexity.
+- Publicación en Marketplace (TECH-003) pendiente de decisión de nombre del plugin y marca de terceros.
+- 1.4.0: streaming FEAT-008 (si la API lo soporta), Kotlin UI DSL (UI-002), historial multi-conversación y export.
 
 ## Sesiones OpenCode
 
@@ -45,3 +47,6 @@ Plugin de IntelliJ que integra Perplexity AI en un tool window de chat. Versión
 
 ### 2026-10-23 — Release 1.3.0 y sincronización master
 `opencode -s ses_e97e32996ffebXgInwPBCyR72U`
+
+### 2026-10-26 — Cierre y verificación de Release 1.3.0 e integración de dev/mock-api
+`opencode -s ses_361e695d3ffeaCSpV0xO1H4I1U`
