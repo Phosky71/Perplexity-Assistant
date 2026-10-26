@@ -90,4 +90,28 @@ class PerplexityClientUrlOverrideTest {
             System.clearProperty("perplexity.api.url")
         }
     }
+
+    @Test
+    fun rejectedLocalhostEvilHostname() {
+        // URL.parse(host) == "localhost" but the hostname is localhost.evil.com
+        System.setProperty("perplexity.api.url", "http://localhost.evil.com/chat/completions")
+        try {
+            val url = PerplexityClient.resolveApiUrl()
+            assertEquals(PerplexityClient.API_URL, url)
+        } finally {
+            System.clearProperty("perplexity.api.url")
+        }
+    }
+
+    @Test
+    fun rejectedLocalhostAtSignAuthInfo() {
+        // "localhost@evil.com" parses host as "evil.com", not localhost
+        System.setProperty("perplexity.api.url", "http://localhost@evil.com/chat/completions")
+        try {
+            val url = PerplexityClient.resolveApiUrl()
+            assertEquals(PerplexityClient.API_URL, url)
+        } finally {
+            System.clearProperty("perplexity.api.url")
+        }
+    }
 }
